@@ -1,5 +1,4 @@
 import serial
-import future
 
 class SPI_rack(serial.Serial):
     """SPI rack interface class

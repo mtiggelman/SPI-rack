@@ -1,5 +1,4 @@
 from spi_rack import *
-import future
 
 # DAC software span constants
 range_4V_uni = 0
@@ -74,7 +73,7 @@ class D5a_module(object):
         data = bytearray([b1, b2, b3, b4])
 
         # Determine in which IC the DAC is, for SPI chip select
-        DAC_ic = DAC/2
+        DAC_ic = DAC//2
         # send data via controller
         self.spi_rack.writeData(self.module, DAC_ic, data)
 
@@ -105,7 +104,7 @@ class D5a_module(object):
         data = bytearray([b1, b2, b3, b4])
 
         # Determine in which IC the DAC is, for SPI chip select
-        DAC_ic = DAC/2
+        DAC_ic = DAC//2
         # send data via controller
         self.spi_rack.writeData(self.module, DAC_ic, data)
 
@@ -131,7 +130,7 @@ class D5a_module(object):
         data = bytearray([b1, b2, b3, b4])
 
         # Determine in which IC the DAC is, for SPI chip select
-        DAC_ic = DAC/2
+        DAC_ic = DAC//2
         # send data via controller
         self.spi_rack.writeData(self.module, DAC_ic, data)
 
@@ -157,7 +156,7 @@ class D5a_module(object):
         data = bytearray([b1, b2, b3, b4])
 
         # Determine in which IC the DAC is, for SPI chip select
-        DAC_ic = DAC/2
+        DAC_ic = DAC//2
         # send data via controller
         self.spi_rack.writeData(self.module, DAC_ic, data)
 
@@ -182,7 +181,7 @@ class D5a_module(object):
         data = bytearray([b1, b2, b3, b4])
 
         # Determine in which IC the DAC is, for SPI chip select
-        DAC_ic = DAC/2
+        DAC_ic = DAC//2
         # send data via controller
         self.spi_rack.writeData(self.module, DAC_ic, data)
 

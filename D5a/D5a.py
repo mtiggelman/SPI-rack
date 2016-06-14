@@ -11,14 +11,11 @@ class D5a(Instrument):
 
         self.d5a = D5a_module(spi_rack, module)
 
-        print('Creating qcodes instrument')
-
         for i in range(16):
             self.add_parameter('dac{}'.format(i + 1),
                                label='DAC {} (V)'.format(i + 1),
                                get_cmd=partial(self._get_dac, i),
-                               #set_cmd=partial(self._set_dac, i),
-                               set_cmd=self.test,
+                               set_cmd=partial(self._set_dac, i),
                                units='V',
                                delay=0.1)
 
@@ -26,9 +23,7 @@ class D5a(Instrument):
         #return self.d5a.read_value(dac)
         return 0
 
-    def test(self, val):
-        print(val)
-
     def _set_dac(self, dac, value):
-        print('Settings DAC {} to {}'.format(dac, value))
-        self.d5a.change_value_update(dac, value)
+        #print('Settings DAC {} to {}'.format(dac, value))
+        #self.d5a.change_value_update(dac, value)
+        self.d5a.set_voltage(dac, value)
