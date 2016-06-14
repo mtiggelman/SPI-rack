@@ -22,6 +22,7 @@ class D5a_module(object):
     Attributes:
         module: the module number set by the user (must coincide with hardware)
         span: a list of values of the span for each DAC in the module
+        voltages: a list of DAC voltage settings last written to the DAC
     """
 
     def __init__(self, spi_rack, module):
@@ -40,12 +41,12 @@ class D5a_module(object):
         self.spi_rack = spi_rack
         self.module = module
         self.span = [0]*16
+        self.voltages = [0]*16
 
         for i in range(16):
             # Set all DACs to +-4V and midscale (0V)
             self.change_span(i, range_4V_uni)
-            self.change_value(i, 2**17)
-            self.update(i)
+            self.set_voltage(i, 0.0)
 
     def change_span_update(self, DAC, span):
         """Changes the software span of selected DAC with update
@@ -184,3 +185,64 @@ class D5a_module(object):
         DAC_ic = DAC/2
         # send data via controller
         self.spi_rack.writeData(self.module, DAC_ic, data)
+
+    def set_voltage(self, DAC, voltage):
+        """Sets the DAC output voltage and updates the DAC output
+
+        Calculates the DAC value for given voltage at the set span of the DAC.
+        Will set to max/min when input voltage exceeds span and prints out a
+        warning to the user. There will always be a difference between set
+        voltage and output voltage as long as not a multiple of the step size
+        is used. The calculated value is floored, not rounded.
+
+        Args:
+            DAC: DAC inside module to update voltage of (int: 0-15)
+            voltage: new DAC voltage (float)
+        """
+        self.voltages[DAC] = voltage
+
+        if self.span[DAC] == range_4V_uni:
+            a = (2**18-1)/4.0
+            b = 0
+            maxV = 4.0
+            minV = 0.0
+        if self.span[DAC] == range_4V_bi:
+            a = (2**18-1)/8.0
+            b = 2**17
+            maxV = 4.0
+            minV = -4.0
+        if self.span[DAC] == range_2_5V_bi:
+            a = (2**18-1)/5.0
+            b = 2**17
+            maxV = 2.5
+            minV = -2.5
+
+        if voltage > maxV:
+            voltage = maxV
+            print("Voltage too high for set span, set to max value")
+        elif voltage < minV:
+            voltage = minV
+            print("Voltage too low for set span, set to min value")
+
+        bit_value = int(a*voltage + b)
+        self.change_value_update(DAC, bit_value)
+
+    def get_stepsize(self, DAC):
+        """Returns the smallest voltage step for a given DAC
+
+        Calculates and resturns the smalles voltage step of the DAC for the
+        set span. Voltage steps smaller than this will not change the DAC value.
+        Recommended to only step the DAC in multiples of this value, as otherwise
+        steps might not behave as expected.
+
+        Args:
+            DAC: DAC of which the step size is calculated (int: 0-15)
+        Returns:
+            Smallest voltage step possible with DAC (float)
+        """
+        if self.span[DAC] == range_4V_uni:
+            return 4.0/(2**18)
+        if self.span[DAC] == range_4V_bi:
+            return 8.0/(2**18)
+        if self.span[DAC] == range_2_5V_bi:
+            return 5.0/(2**18)
