@@ -205,12 +205,11 @@ class D5a_module(object):
             b = 0
             maxV = 4.0
             minV = 0.0
-        if self.span[DAC] == range_4V_bi:
+        elif self.span[DAC] == range_4V_bi:
             a = (2**18-1)/8.0
             b = 2**17
             maxV = 4.0
             minV = -4.0
-        if self.span[DAC] == range_2_5V_bi:
             a = (2**18-1)/5.0
             b = 2**17
             maxV = 2.5
