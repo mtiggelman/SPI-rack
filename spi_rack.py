@@ -16,7 +16,7 @@ class SPI_rack(serial.Serial):
         refFrequency: the current reference frequency (in MHz)
     """
 
-    def __init__(self, port, baud, timeout):
+    def __init__(self, port, baud, timeout, refFrequency=10):
         """Inits SPI_rack class
 
         Args:
@@ -40,7 +40,7 @@ class SPI_rack(serial.Serial):
 
         self.activeModule = None
         self.activeChip = None
-        self.refFrequency = None
+        self.refFrequency = refFrequency
 
     def setRefFrequency(self, frequency):
         """Set the reference frequency present on the backplane (MHz)
@@ -54,7 +54,7 @@ class SPI_rack(serial.Serial):
         """
         self.refFrequency = frequency
 
-    def setActive(self, module, chip):
+    def setActive(self, module, chip, SPI_mode):
         """Set the current module/chip to active on controller unit
 
         By writing 'c' and then chip/module combination, this chip will
@@ -66,13 +66,13 @@ class SPI_rack(serial.Serial):
             chip: chip in module to set active (int)
         """
 
-        s_data = bytearray([ord('c'), (chip<<4) | module])
+        s_data = bytearray([ord('c'), (chip<<4) | module, SPI_mode])
         self.write(s_data)
 
         self.activeModule = module
         self.activeChip = chip
 
-    def writeData(self, module, chip, data):
+    def writeData(self, module, chip, SPI_mode, data):
         """Write data to selected module/chip combination
 
         Args:
@@ -82,12 +82,12 @@ class SPI_rack(serial.Serial):
         """
 
         if self.activeModule != module or self.activeChip != chip:
-            self.setActive(module, chip)
+            self.setActive(module, chip, SPI_mode)
 
         data = bytearray([ord('w')]) + data
         self.write(data)
 
-    def readData(self, module, chip, no_of_bytes, data):
+    def readData(self, module, chip, SPI_mode, no_of_bytes, data):
         """Read data from selected module/chip combination
 
         Args:
@@ -101,7 +101,7 @@ class SPI_rack(serial.Serial):
         """
         data = bytearray([ord('r')]) + data
 
-        self.writeData(module, chip, data)
+        self.writeData(module, chip, SPI_mode, data)
         r_data = self.read(no_of_bytes)
 
         if len(r_data) < no_of_bytes:
