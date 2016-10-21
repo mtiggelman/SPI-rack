@@ -45,7 +45,7 @@ class D5a_module(object):
 
         for i in range(16):
             # Set all DACs to +-4V and midscale (0V)
-            self.change_span(i, range_4V_bi)
+            self.change_span(i, D5a_module.range_4V_bi)
             self.set_voltage(i, 0.0)
 
     def change_span_update(self, DAC, span):
@@ -201,17 +201,17 @@ class D5a_module(object):
         """
         self.voltages[DAC] = voltage
 
-        if self.span[DAC] == range_4V_uni:
+        if self.span[DAC] == D5a_module.range_4V_uni:
             a = (2**18-1)/4.0
             b = 0
             maxV = 4.0
             minV = 0.0
-        elif self.span[DAC] == range_4V_bi:
+        elif self.span[DAC] == D5a_module.range_4V_bi:
             a = (2**18-1)/8.0
             b = 2**17
             maxV = 4.0
             minV = -4.0
-        elif self.span[DAC] == range_2_5V_bi:
+        elif self.span[DAC] == D5a_module.range_2_5V_bi:
             a = (2**18-1)/5.0
             b = 2**17
             maxV = 2.5
@@ -240,9 +240,9 @@ class D5a_module(object):
         Returns:
             Smallest voltage step possible with DAC (float)
         """
-        if self.span[DAC] == range_4V_uni:
+        if self.span[DAC] == D5a_module.range_4V_uni:
             return 4.0/(2**18)
-        if self.span[DAC] == range_4V_bi:
+        if self.span[DAC] == D5a_module.range_4V_bi:
             return 8.0/(2**18)
-        if self.span[DAC] == range_2_5V_bi:
+        if self.span[DAC] == D5a_module.range_2_5V_bi:
             return 5.0/(2**18)

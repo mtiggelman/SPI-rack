@@ -22,7 +22,8 @@ class SPI_rack(serial.Serial):
         Args:
             port: serial port used by SPI rack controller unit (string)
             baud: baud rate value (int)
-            timeout: data receive timout in seconds (float)x
+            timeout: data receive timout in seconds (float)
+            refFrequency: backplane reference frequency in MHz (int)
 
         Raises:
             ValueError: if parameters (baud rate) are out of range
@@ -64,6 +65,7 @@ class SPI_rack(serial.Serial):
         Args:
             module: module number to set active (int)
             chip: chip in module to set active (int)
+            SPI_mode: SPI mode of the chip to be activated (int)
         """
 
         s_data = bytearray([ord('c'), (chip<<4) | module, SPI_mode])
@@ -78,6 +80,7 @@ class SPI_rack(serial.Serial):
         Args:
             module: number of the module to send data to (int)
             chip: chip in module to send data to (int)
+            SPI_mode: SPI mode of the chip to be activated (int)
             data: array of data to be send (bytearray)
         """
 
@@ -93,6 +96,7 @@ class SPI_rack(serial.Serial):
         Args:
             module: number of the module to send data to (int)
             chip: chip in module to send data to (int)
+            SPI_mode: SPI mode of the chip to be activated (int)
             no_of_bytes: number of bytes to be read (int)
             data: data to be send to chip for reading
 
