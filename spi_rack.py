@@ -29,7 +29,7 @@ class SPI_rack(serial.Serial):
             SerialException: in case serial device cannot be found or configured
 
         Example:
-            SPI_Rack_1 = SPI_rack("COM1", 9600, 1)
+            SPI_Rack_1 = SPI_rack("COM1", 1000000, 1)
         """
         try:
             super(SPI_rack, self).__init__(port, baud, timeout = timeout)

@@ -1,11 +1,6 @@
 from spi_rack import *
 from chip_mode import *
 
-# DAC software span constants
-range_4V_uni = 0
-range_4V_bi = 2
-range_2_5V_bi = 4
-
 class D5a_module(object):
     """D5a module interface class
 
@@ -24,6 +19,11 @@ class D5a_module(object):
         span: a list of values of the span for each DAC in the module
         voltages: a list of DAC voltage settings last written to the DAC
     """
+
+    # DAC software span constants
+    range_4V_uni = 0
+    range_4V_bi = 2
+    range_2_5V_bi = 4
 
     def __init__(self, spi_rack, module):
         """Inits D5a module class
