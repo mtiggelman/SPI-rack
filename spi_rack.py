@@ -16,7 +16,7 @@ class SPI_rack(serial.Serial):
         refFrequency: the current reference frequency (in MHz)
     """
 
-    def __init__(self, port, baud, timeout, refFrequency=10):
+    def __init__(self, port, baud, timeout, ref_frequency=10):
         """Inits SPI_rack class
 
         Args:
@@ -39,11 +39,11 @@ class SPI_rack(serial.Serial):
         except serial.SerialException:
             print("Cannot open serial port: " + port)
 
-        self.activeModule = None
-        self.activeChip = None
-        self.refFrequency = refFrequency
+        self.active_module = None
+        self.active_chip = None
+        self.ref_frequency = ref_frequency
 
-    def setRefFrequency(self, frequency):
+    def set_ref_frequency(self, frequency):
         """Set the reference frequency present on the backplane (MHz)
 
         The reference frequency is shared between all modules. This info
@@ -53,9 +53,9 @@ class SPI_rack(serial.Serial):
         Args:
             frequency: the reference frequency on the backplane (in MHz)
         """
-        self.refFrequency = frequency
+        self.ref_frequency = frequency
 
-    def setActive(self, module, chip, SPI_mode):
+    def set_active(self, module, chip, SPI_mode):
         """Set the current module/chip to active on controller unit
 
         By writing 'c' and then chip/module combination, this chip will
@@ -71,10 +71,10 @@ class SPI_rack(serial.Serial):
         s_data = bytearray([ord('c'), (chip<<4) | module, SPI_mode])
         self.write(s_data)
 
-        self.activeModule = module
-        self.activeChip = chip
+        self.active_module = module
+        self.active_chip = chip
 
-    def writeData(self, module, chip, SPI_mode, data):
+    def write_data(self, module, chip, SPI_mode, data):
         """Write data to selected module/chip combination
 
         Args:
@@ -84,13 +84,13 @@ class SPI_rack(serial.Serial):
             data: array of data to be send (bytearray)
         """
 
-        if self.activeModule != module or self.activeChip != chip:
-            self.setActive(module, chip, SPI_mode)
+        if self.active_module != module or self.active_chip != chip:
+            self.set_active(module, chip, SPI_mode)
 
         data = bytearray([ord('w')]) + data
         self.write(data)
 
-    def readData(self, module, chip, SPI_mode, no_of_bytes, data):
+    def read_data(self, module, chip, SPI_mode, no_of_bytes, data):
         """Read data from selected module/chip combination
 
         Args:
@@ -105,7 +105,7 @@ class SPI_rack(serial.Serial):
         """
         data = bytearray([ord('r')]) + data
 
-        self.writeData(module, chip, SPI_mode, data)
+        self.write_data(module, chip, SPI_mode, data)
         r_data = self.read(no_of_bytes)
 
         if len(r_data) < no_of_bytes:

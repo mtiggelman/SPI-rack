@@ -32,7 +32,7 @@ class S5i_module(object):
         self.spi_rack = spi_rack
         self.module = module
 
-        self.rfFrequency = frequency
+        self.rf_frequency = frequency
         self.outputPower = None
 
         # These are the 6 registers present in the ADF4351
@@ -42,9 +42,9 @@ class S5i_module(object):
         # In REG5: set LD PIN MODE to 1 -> digital lock detect
         self.registers[5] = (1<<22) | 5
 
-        self.setRfFrequency(frequency)
+        self.set_frequency(frequency)
 
-    def writeRegisters(self):
+    def write_registers(self):
         """Writes data via the SPI Rack class to the SPI Rack
 
         Writes the current register settings to the ADF4351 in reversed order
@@ -58,9 +58,9 @@ class S5i_module(object):
             b4 = reg&0xFF
             data = bytearray([b1, b2, b3, b4])
             # Write to ADF at SPI address 0
-            self.spi_rack.writeData(self.module, 0, ADF4351_MODE, data)
+            self.spi_rack.write_data(self.module, 0, ADF4351_MODE, data)
 
-    def setRfFrequency(self, frequency):
+    def set_frequency(self, frequency):
         """Calculates and sets the RF output to given frequency
 
         Calculates the registers for the given RF frequency, optimized for the
@@ -77,7 +77,7 @@ class S5i_module(object):
         ###
 
         #Get the backplane reference frequency
-        fref = float(self.spi_rack.refFrequency)
+        fref = float(self.spi_rack.ref_frequency)
         #Calculate VCO output divider:
         div = 0
         for n in range(0,7):
@@ -121,4 +121,4 @@ class S5i_module(object):
         # In REG0: Set calculated INT value
         self.registers[0] = (INT<<15)
 
-        self.writeRegisters()
+        self.write_registers()

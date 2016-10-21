@@ -76,7 +76,7 @@ class D5a_module(object):
         # Determine in which IC the DAC is, for SPI chip select
         DAC_ic = DAC//2
         # send data via controller
-        self.spi_rack.writeData(self.module, DAC_ic, LTC2758_MODE, data)
+        self.spi_rack.write_data(self.module, DAC_ic, LTC2758_MODE, data)
 
     def change_span(self, DAC, span):
         """Changes the software span of selected DAC without update
@@ -107,7 +107,7 @@ class D5a_module(object):
         # Determine in which IC the DAC is, for SPI chip select
         DAC_ic = DAC//2
         # send data via controller
-        self.spi_rack.writeData(self.module, DAC_ic, LTC2758_MODE, data)
+        self.spi_rack.write_data(self.module, DAC_ic, LTC2758_MODE, data)
 
     def change_value_update(self, DAC, value):
         """Changes and updates the DAC value
@@ -133,7 +133,7 @@ class D5a_module(object):
         # Determine in which IC the DAC is, for SPI chip select
         DAC_ic = DAC//2
         # send data via controller
-        self.spi_rack.writeData(self.module, DAC_ic, LTC2758_MODE, data)
+        self.spi_rack.write_data(self.module, DAC_ic, LTC2758_MODE, data)
 
     def change_value(self, DAC, value):
         """Changes the DAC value
@@ -159,7 +159,7 @@ class D5a_module(object):
         # Determine in which IC the DAC is, for SPI chip select
         DAC_ic = DAC//2
         # send data via controller
-        self.spi_rack.writeData(self.module, DAC_ic, LTC2758_MODE, data)
+        self.spi_rack.write_data(self.module, DAC_ic, LTC2758_MODE, data)
 
     def update(self, DAC):
         """Updates the output of the DAC to the written value
@@ -184,7 +184,7 @@ class D5a_module(object):
         # Determine in which IC the DAC is, for SPI chip select
         DAC_ic = DAC//2
         # send data via controller
-        self.spi_rack.writeData(self.module, DAC_ic, LTC2758_MODE, data)
+        self.spi_rack.write_data(self.module, DAC_ic, LTC2758_MODE, data)
 
     def set_voltage(self, DAC, voltage):
         """Sets the DAC output voltage and updates the DAC output
