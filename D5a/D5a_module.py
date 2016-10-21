@@ -45,7 +45,7 @@ class D5a_module(object):
 
         for i in range(16):
             # Set all DACs to +-4V and midscale (0V)
-            self.change_span(i, range_4V_uni)
+            self.change_span(i, range_4V_bi)
             self.set_voltage(i, 0.0)
 
     def change_span_update(self, DAC, span):
