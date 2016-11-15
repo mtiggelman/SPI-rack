@@ -103,9 +103,11 @@ class SPI_rack(serial.Serial):
         Returns:
             List of bytes received from module/chip
         """
-        data = bytearray([ord('r')]) + data
+        if self.active_module != module or self.active_chip != chip:
+            self.set_active(module, chip, SPI_mode)
 
-        self.write_data(module, chip, SPI_mode, data)
+        data = bytearray([ord('r')]) + data
+        self.write(data)
         r_data = self.read(no_of_bytes)
 
         if len(r_data) < no_of_bytes:
