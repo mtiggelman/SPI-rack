@@ -23,7 +23,7 @@ class D5a_module(object):
     # DAC software span constants
     range_4V_uni = 0
     range_4V_bi = 2
-    range_2_5V_bi = 4
+    range_2V_bi = 4
 
     def __init__(self, spi_rack, module):
         """Inits D5a module class
@@ -211,11 +211,11 @@ class D5a_module(object):
             b = 2**17
             maxV = 4.0
             minV = -4.0
-        elif self.span[DAC] == D5a_module.range_2_5V_bi:
-            a = (2**18-1)/5.0
+        elif self.span[DAC] == D5a_module.range_2V_bi:
+            a = (2**18-1)/4.0
             b = 2**17
-            maxV = 2.5
-            minV = -2.5
+            maxV = 2.0
+            minV = -2.0
 
         if voltage > maxV:
             voltage = maxV
@@ -230,7 +230,7 @@ class D5a_module(object):
     def get_stepsize(self, DAC):
         """Returns the smallest voltage step for a given DAC
 
-        Calculates and resturns the smalles voltage step of the DAC for the
+        Calculates and returns the smalles voltage step of the DAC for the
         set span. Voltage steps smaller than this will not change the DAC value.
         Recommended to only step the DAC in multiples of this value, as otherwise
         steps might not behave as expected.
@@ -244,5 +244,5 @@ class D5a_module(object):
             return 4.0/(2**18)
         if self.span[DAC] == D5a_module.range_4V_bi:
             return 8.0/(2**18)
-        if self.span[DAC] == D5a_module.range_2_5V_bi:
-            return 5.0/(2**18)
+        if self.span[DAC] == D5a_module.range_2V_bi:
+            return 4.0/(2**18)
