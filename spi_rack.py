@@ -90,14 +90,13 @@ class SPI_rack(serial.Serial):
         data = bytearray([ord('w')]) + data
         self.write(data)
 
-    def read_data(self, module, chip, SPI_mode, no_of_bytes, data):
+    def read_data(self, module, chip, SPI_mode, data):
         """Read data from selected module/chip combination
 
         Args:
             module: number of the module to send data to (int)
             chip: chip in module to send data to (int)
             SPI_mode: SPI mode of the chip to be activated (int)
-            no_of_bytes: number of bytes to be read (int)
             data: data to be send to chip for reading
 
         Returns:
@@ -106,11 +105,12 @@ class SPI_rack(serial.Serial):
         if self.active_module != module or self.active_chip != chip:
             self.set_active(module, chip, SPI_mode)
 
+        read_length = len(data)
         data = bytearray([ord('r')]) + data
         self.write(data)
-        r_data = self.read(no_of_bytes)
+        r_data = self.read(read_length)
 
-        if len(r_data) < no_of_bytes:
+        if len(r_data) < read_length:
             print("Received less bytes than expected")
 
         return [ord(c) for c in r_data]

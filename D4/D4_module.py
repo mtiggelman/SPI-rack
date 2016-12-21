@@ -48,8 +48,8 @@ class D4_module(object):
         Read a given number of bytes (no_bytes) from given ADC register
         """
 
-        s_data = bytearray([no_bytes, reg | (1<<6)])
-        r_i_data = self.spi_rack.read_data(self.module, ADC, AD7175_MODE, no_bytes, s_data)
+        s_data = bytearray([ reg | (1<<6)] + no_bytes*[0])
+        r_i_data = self.spi_rack.read_data(self.module, ADC, AD7175_MODE, s_data)
 
         return r_i_data
 
@@ -71,6 +71,7 @@ class D4_module(object):
             if (status[0]&(1<<7)) == 0:
                 # Get raw data, shift to correct place and convert to voltage
                 raw_data = self.read_data(ADC, DATA_REG, 3)
+                raw_data = raw_data[1:]
                 raw_data_val = raw_data[0] << 16 | raw_data[1] << 8 | raw_data[2]
                 #print("Raw data: " + str(bin(raw_data_val)))
                 # For differential, use 10 Volt instead of 5 Volt
