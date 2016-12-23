@@ -73,7 +73,7 @@ class S5i_module(object):
         ###
         #TODO:  add doubler/divided in algorithm to potentially lower noise
         #       add checks to see if possible to set frequency
-        #       add user feedback incase of problems
+        #       add user feedback in case of problems
         ###
 
         #Get the backplane reference frequency

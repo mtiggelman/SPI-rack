@@ -97,10 +97,10 @@ class SPI_rack(serial.Serial):
             module: number of the module to send data to (int)
             chip: chip in module to send data to (int)
             SPI_mode: SPI mode of the chip to be activated (int)
-            data: data to be send to chip for reading
+            data: data to be send to chip for reading (bytearray)
 
         Returns:
-            List of bytes received from module/chip
+            Bytes received from module/chip (int list)
         """
         if self.active_module != module or self.active_chip != chip:
             self.set_active(module, chip, SPI_mode)
