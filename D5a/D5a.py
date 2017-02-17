@@ -1,5 +1,5 @@
-from qcodes import Instrument, VisaInstrument
-from qcodes.utils.validators import Numbers, Ints
+from qcodes import Instrument
+from qcodes.utils.validators import Enum
 
 from .D5a_module import D5a_module
 
@@ -26,9 +26,9 @@ class D5a(Instrument):
         self.d5a = D5a_module(spi_rack, module)
 
         self._span_set_map = {
-           '4v uni':    0,
-           '4v bi':     2,
-           '2.5v bi':   4,
+            '4v uni': 0,
+            '4v bi': 2,
+            '2.5v bi': 4,
         }
 
         self._span_get_map = {v: k for k, v in self._span_set_map.items()}
@@ -37,19 +37,20 @@ class D5a(Instrument):
 
         for i in range(16):
             self.add_parameter('dac{}'.format(i + 1),
-                               label='DAC {} (V)'.format(i + 1),
+                               label='DAC {}'.format(i + 1),
                                get_cmd=partial(self._get_dac, i),
-                               set_cmd=partial(self._set_dac, i),
-                               units='V',
+                               set_cmd=partial(self.d5a.set_voltage, i),
+                               unit='V',
                                delay=0.1)
 
             self.add_parameter('stepsize{}'.format(i + 1),
-                               get_cmd=partial(self._get_stepsize, i),
-                               units='V')
+                               get_cmd=partial(self.d5a.get_stepsize, i),
+                               unit='V')
 
             self.add_parameter('span{}'.format(i + 1),
                                get_cmd=partial(self._get_span, i),
-                               set_cmd=partial(self._set_span, i))
+                               set_cmd=partial(self._set_span, i),
+                               vals=Enum(*self._span_set_map.keys()))
 
     def _set_dacs_zero(self):
         for i in range(16):
@@ -58,17 +59,8 @@ class D5a(Instrument):
     def _get_dac(self, dac):
         return self.d5a.voltages[dac]
 
-    def _set_dac(self, dac, value):
-        self.d5a.set_voltage(dac, value)
-
-    def _get_stepsize(self, dac):
-        return self.d5a.get_stepsize(dac)
-
     def _get_span(self, dac):
         return self._span_get_map[self.d5a.span[dac]]
 
     def _set_span(self, dac, span_str):
-        if span_str in self._span_set_map.keys():
-            self.d5a.change_span_update(dac, self._span_set_map[span_str])
-        else:
-            raise KeyError("DAC span of '{}' not recognized.".format(span_str))
+        self.d5a.change_span_update(dac, self._span_set_map[span_str])
