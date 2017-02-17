@@ -17,7 +17,7 @@ class S5i(Instrument):
                            label='RF Frequency',
                            get_cmd=self._get_rf_frequency,
                            set_cmd=self.s5i.set_frequency,
-                           units='MHz',
+                           unit='MHz',
                            vals=Numbers())
 
     def _get_rf_frequency(self):
