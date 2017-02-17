@@ -1,5 +1,5 @@
-from qcodes import Instrument, VisaInstrument
-from qcodes.utils.validators import Numbers, Ints
+from qcodes import Instrument
+from qcodes.utils.validators import Numbers
 
 from .S5i_module import S5i_module
 
@@ -14,14 +14,11 @@ class S5i(Instrument):
         self.s5i = S5i_module(spi_rack, module)
 
         self.add_parameter('rf_frequency',
-                           label='RF Frequency {} (MHz)'.format(i + 1),
+                           label='RF Frequency',
                            get_cmd=self._get_rf_frequency,
-                           set_cmd=self._set_rf_frequency,
+                           set_cmd=self.s5i.set_frequency,
                            units='MHz',
                            vals=Numbers())
 
     def _get_rf_frequency(self):
         return self.s5i.rfFrequency
-
-    def _set_rf_frequency(self, frequency):
-        self.s5i.setRfFrequency(frequency)
