@@ -16,7 +16,7 @@ class S5i_module(object):
         rfFrequency: the current set RF output frequency
     """
 
-    def __init__(self, spi_rack, module, frequency=100):
+    def __init__(self, spi_rack, module, frequency=100e6):
         """Inits S5i module class
 
         The S5i module needs an SPI_rack class for communication. If no frequency
@@ -25,7 +25,7 @@ class S5i_module(object):
         Args:
             spi_rack: SPI_rack class object via which the communication runs
             module: module number set on the hardware
-            frequency: RF frequency at startup, default 100 MHz
+            frequency: RF frequency at startup (in Hz), default 100 MHz
         Example:
             S5i_1 = S5i_module(SPI_Rack_1, 4)
         """
@@ -33,6 +33,9 @@ class S5i_module(object):
         self.module = module
 
         self.rf_frequency = frequency
+        self.stepsize = 1e6
+        self.ref_frequency = 10e6
+        self.use_external = 0
         self.outputPower = None
 
         # These are the 6 registers present in the ADF4351
@@ -60,7 +63,27 @@ class S5i_module(object):
             # Write to ADF at SPI address 0
             self.spi_rack.write_data(self.module, 0, ADF4351_MODE, data)
 
+    def use_external_reference(self, use_external):
+        #TODO: set bit on backplane to toggle between the two physically
+        if use_external == 1:
+            self.use_external = 1
+            self.ref_frequency = self.spi_rack.ref_frequency
+        else:
+            self.use_external = 0
+            self.ref_frequency = 10e6
+
+    def set_stepsize(self, stepsize):
+        R = self.ref_frequency / stepsize
+        if self.ref_frequency % stepsize == 0 and R < 1024:
+            self.stepsize = stepsize
+        else:
+            raise ValueError('"stepsize" value {} not allowed. Must be integer division of reference frequency'.format(stepsize))
+
     def set_frequency(self, frequency):
+
+        return None
+
+    def set_frequency_optimally(self, frequency):
         """Calculates and sets the RF output to given frequency
 
         Calculates the registers for the given RF frequency, optimized for the
@@ -77,7 +100,8 @@ class S5i_module(object):
         ###
 
         #Get the backplane reference frequency
-        fref = float(self.spi_rack.ref_frequency)
+        #fref = float(self.spi_rack.ref_frequency)/10.0e6
+        fref = 10.0
         #Calculate VCO output divider:
         div = 0
         for n in range(0,7):
@@ -85,6 +109,8 @@ class S5i_module(object):
             if VCO >= 2200 and VCO <= 4400:
                 div = n
                 break
+        print("div val: " + str(div))
+        print("VCO: " + str(VCO))
         #Prescaler: 0 (4/5) if < 3.6 GHz, 1 (8/9) if >= 3.6 GHz
         #Nmin changes with prescaler:
         if frequency >= 3600.0:
@@ -104,13 +130,17 @@ class S5i_module(object):
                 INT = n
                 R = int(R_t)
                 break
-
+        print("INT: " + str(INT))
+        print("R: " + str(R))
         #Check that band select is smaller than 125 kHz, otherwise divide
         #until it is
         fpfd = fref/R
+        print("fpfd: " + str(fpfd))
         band_sel = 1
-        if fpfd > 0.125:
-            band_sel = int(math.ceil(fpfd/0.125))
+        if fpfd > 0.05:
+            band_sel = int(math.ceil(fpfd/0.05))
+        print("band_sel: " + str(band_sel))
+        print("fpfd new: " + str(fpfd/band_sel))
 
         # In REG4: Set calculated divider and band select, enable RF out at max power
         self.registers[4] = (div<<20) | (band_sel<<12) | (1<<5) | (3<<3) | 4

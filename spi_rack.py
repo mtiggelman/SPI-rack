@@ -13,17 +13,17 @@ class SPI_rack(serial.Serial):
     Attributes:
         activeModule: keeps track of which module is currently active
         activeChip: keeps track of which chip in a module is currently active
-        refFrequency: the current reference frequency (in MHz)
+        refFrequency: the current reference frequency (in Hz)
     """
 
-    def __init__(self, port, baud, timeout, ref_frequency=10):
+    def __init__(self, port, baud, timeout, ref_frequency=10e6):
         """Inits SPI_rack class
 
         Args:
             port: serial port used by SPI rack controller unit (string)
             baud: baud rate value (int)
             timeout: data receive timout in seconds (float)
-            refFrequency: backplane reference frequency in MHz (int)
+            refFrequency: backplane reference frequency in Hz (int)
 
         Raises:
             ValueError: if parameters (baud rate) are out of range
@@ -44,14 +44,14 @@ class SPI_rack(serial.Serial):
         self.ref_frequency = ref_frequency
 
     def set_ref_frequency(self, frequency):
-        """Set the reference frequency present on the backplane (MHz)
+        """Set the reference frequency present on the backplane (Hz)
 
         The reference frequency is shared between all modules. This info
         can be used by other modules for calculation, for example the
         s5i RF generator module needs to know the frequency.
 
         Args:
-            frequency: the reference frequency on the backplane (in MHz)
+            frequency: the reference frequency on the backplane (in Hz)
         """
         self.ref_frequency = frequency
 

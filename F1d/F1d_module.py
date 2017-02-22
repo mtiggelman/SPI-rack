@@ -51,7 +51,7 @@ class F1d_module(object):
             12-bit ADC data (int)
         """
         s_data = bytearray([1, 160|(channel<<6), 0])
-        r_data = self.spi_rack.read_data(self.module, 1, MCP3202_MODE, s_data)
+        r_data = self.spi_rack.read_data(self.module, 1, MCP320x_MODE, s_data)
         return (r_data[1]&0xF)<<8 | r_data[2]
 
     def enable_remote(self, enable):

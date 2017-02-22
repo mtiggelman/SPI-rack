@@ -7,4 +7,5 @@ setting the chip select in the SPI Rack
 LTC2758_MODE = 0
 ADF4351_MODE = 0
 AD7175_MODE = 3
-MCP3202_MODE = 0
+MCP320x_MODE = 0
+MAX521x_MODE = 1
