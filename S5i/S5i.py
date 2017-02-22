@@ -10,15 +10,19 @@ class S5i(Instrument):
     """
     def __init__(self, name, spi_rack, module, **kwargs):
         super().__init__(name, **kwargs)
-
+        self._frequency = 100
         self.s5i = S5i_module(spi_rack, module)
 
-        self.add_parameter('rf_frequency',
-                           label='RF Frequency',
+        self.add_parameter('frequency',
+                           label='Frequency',
                            get_cmd=self._get_rf_frequency,
-                           set_cmd=self.s5i.set_frequency,
+                           set_cmd=self._set_rf_frequency,
                            unit='MHz',
                            vals=Numbers())
 
     def _get_rf_frequency(self):
-        return self.s5i.rfFrequency
+        return self._frequency
+
+    def _set_rf_frequency(self, frequency):
+        self._frequency = frequency
+        self.s5i.set_frequency_optimally(frequency)
