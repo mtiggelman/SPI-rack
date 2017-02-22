@@ -1,5 +1,5 @@
-from spi_rack import *
-from chip_mode import *
+from ..spi_rack import *
+from ..chip_mode import *
 import math
 
 class S5i_module(object):
