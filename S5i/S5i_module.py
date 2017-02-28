@@ -17,10 +17,12 @@ class S5i_module(object):
     """
 
     def __init__(self, spi_rack, module, frequency=100e6):
+    #def __init__(self, module, frequency=100e6):
         """Inits S5i module class
 
         The S5i module needs an SPI_rack class for communication. If no frequency
-        is given at initialization, the output will be set to 100 MHz.
+        is given at initialization, the output will be set to 100 MHz with a
+        stepsize of 1 MHz
 
         Args:
             spi_rack: SPI_rack class object via which the communication runs
@@ -43,7 +45,7 @@ class S5i_module(object):
         # In REG3: set ABP=1 (3 ns, INT-N) and CHARGE CANCEL=1
         self.registers[3] = (1<<22) | (1<<21) | 3
         # In REG5: set LD PIN MODE to 1 -> digital lock detect
-        self.registers[5] = (1<<22) | 5
+        self.registers[5] = (1<<22) | (3<<19) | 5
 
         self.set_frequency(frequency)
 
@@ -73,15 +75,76 @@ class S5i_module(object):
             self.ref_frequency = 10e6
 
     def set_stepsize(self, stepsize):
+        """Sets the stepsize to be used in set_frequency()
+
+        Sets the stepsize with which the frequency will be set. Usefull parameters for
+        doing sweeps.
+
+        Args:
+            stepsize: the stepsize in Hz, must be integer division of reference frequency
+        """
         R = self.ref_frequency / stepsize
         if self.ref_frequency % stepsize == 0 and R < 1024:
             self.stepsize = stepsize
         else:
-            raise ValueError('"stepsize" value {} not allowed. Must be integer division of reference frequency'.format(stepsize))
+            raise ValueError('"stepsize" value {} not allowed. Must be integer division of reference frequency below 1024'.format(stepsize))
 
     def set_frequency(self, frequency):
+        """Sets the frequency
 
-        return None
+        Sets the frequency with the grid set by set_stepsize. Will calculate the correct
+        register values and raises ValueErrors if the frequency is not possible. Either
+        by limitations in the stepsize or when it exceeds the chip requirements.
+
+        Args:
+            frequency: wanted output frequency (Hz)
+        """
+        #Calculate VCO output divider:
+        div = 0
+        for n in range(0,7):
+            VCO = 2**n * frequency
+            if VCO >= 2.2e9 and VCO <= 4.4e9:
+                div = n
+                break
+
+        #Prescaler: 0 (4/5) if < 3.6 GHz, 1 (8/9) if >= 3.6 GHz
+        #Nmin changes with prescaler:
+        if frequency >= 3.6e9:
+            prescaler = 1
+            Nmin = 75
+        else:
+            prescaler = 0
+            Nmin = 23
+
+        #Get R from stepsize and reference frequency
+        R = int(self.ref_frequency / self.stepsize)
+
+        if frequency % self.stepsize != 0.0:
+            raise ValueError('Frequency must be integer multiple of stepsize: {}'.format(self.stepsize))
+        #Calculate INT value
+        INT = int(frequency/self.stepsize)
+        if INT < Nmin or INT > 65535:
+            fmin = max(Nmin * self.stepsize, 40e6)
+            fmax = min(self.stepsize*65535, 4.4e9)
+            raise ValueError('Frequency {} not possible with stepsize {}. Allowed frequencies: {}<f<{}'.format(frequency, self.stepsize, fmin, fmax))
+
+        #Check that band select is smaller than 125 kHz, otherwise divide
+        #until it is
+        fpfd = self.ref_frequency/R
+        band_sel = 1
+        if fpfd > 125e3:
+            band_sel = int(math.ceil(fpfd/125e3))
+
+        # In REG4: Set calculated divider and band select, enable RF out at max power
+        self.registers[4] = (div<<20) | (band_sel<<12) | (1<<5) | (3<<3) | 4
+        # In REG2: Set calculated R value, enable double buffer, LDF=INT-N, LDP=6ns, PD_POL = Positive
+        self.registers[2] = (R<<14) | (1<<13) | (7<<9) | (1<<8) | (1<<7) | (1<<6) | 2
+        # In REG1: Set prescaler value
+        self.registers[1] = (prescaler <<27) | (2<<3) | 1
+        # In REG0: Set calculated INT value
+        self.registers[0] = (INT<<15)
+
+        self.write_registers()
 
     def set_frequency_optimally(self, frequency):
         """Calculates and sets the RF output to given frequency
@@ -137,8 +200,8 @@ class S5i_module(object):
         fpfd = fref/R
         print("fpfd: " + str(fpfd))
         band_sel = 1
-        if fpfd > 0.05:
-            band_sel = int(math.ceil(fpfd/0.05))
+        if fpfd > 0.125:
+            band_sel = int(math.ceil(fpfd/0.125))
         print("band_sel: " + str(band_sel))
         print("fpfd new: " + str(fpfd/band_sel))
 
@@ -147,7 +210,7 @@ class S5i_module(object):
         # In REG2: Set calculated R value, enable double buffer, LDF=INT-N, LDP=6ns, PD_POL = Positive
         self.registers[2] = (R<<14) | (1<<13) | (7<<9) | (1<<8) | (1<<7) | (1<<6) | 2
         # In REG1: Set prescaler value
-        self.registers[1] = (prescaler <<27) | 1
+        self.registers[1] = (prescaler <<27) | (2<<3) | 1
         # In REG0: Set calculated INT value
         self.registers[0] = (INT<<15)
 

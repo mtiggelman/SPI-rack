@@ -96,7 +96,7 @@ class F1d_module(object):
         Raises:
             ValueError: if value parameter is not in the list of possible values
         """
-        possible_values = [1, 3, 10, 20]
+        possible_values = [1, 3, 10, 30]
         if value not in possible_values:
             raise ValueError('Value {} does not exist. Possible values are: {}'.format(value, possible_values))
 
@@ -105,7 +105,7 @@ class F1d_module(object):
             self.remote_settings |= 3
         elif value == 10:
             self.remote_settings |= 2
-        elif value == 20:
+        elif value == 30:
             self.remote_settings |= 1
 
         self.spi_rack.write_data(self.module, 0, 0, bytearray([self.remote_settings]))
