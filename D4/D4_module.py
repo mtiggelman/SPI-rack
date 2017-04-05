@@ -1,6 +1,6 @@
-from ..spi_rack import *
-from .D4_constants import *
-from ..chip_mode import *
+from spi_rack import *
+from D4_constants import *
+from chip_mode import *
 
 import time
 

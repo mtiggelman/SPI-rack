@@ -1,5 +1,5 @@
-from ..spi_rack import *
-from ..chip_mode import *
+from spi_rack import *
+from chip_mode import *
 
 class D5a_module(object):
     """D5a module interface class

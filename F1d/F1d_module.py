@@ -1,5 +1,5 @@
-from ..spi_rack import *
-from ..chip_mode import *
+from spi_rack import *
+from chip_mode import *
 
 class F1d_module(object):
     """F1d module interface class

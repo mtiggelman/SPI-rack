@@ -1,5 +1,5 @@
-from ..spi_rack import *
-from ..chip_mode import *
+from spi_rack import *
+from chip_mode import *
 import math
 
 class S5i_module(object):
@@ -8,10 +8,8 @@ class S5i_module(object):
     This class does the low level interfacing with the S5i RF generator module.
     It requires an SPI Rack object and module number at initialization. A start
     up frequency can be given, otherwise it defaults to 100 MHz.
-
     The RF frequency can be changed via setRfFrequency, which calculates the
     register values and updates the frequency of the ADF4351.
-
     Attributes:
         rfFrequency: the current set RF output frequency
     """
@@ -23,7 +21,6 @@ class S5i_module(object):
         The S5i module needs an SPI_rack class for communication. If no frequency
         is given at initialization, the output will be set to 100 MHz with a
         stepsize of 1 MHz
-
         Args:
             spi_rack: SPI_rack class object via which the communication runs
             module: module number set on the hardware
@@ -79,7 +76,6 @@ class S5i_module(object):
 
         Sets the stepsize with which the frequency will be set. Usefull parameters for
         doing sweeps.
-
         Args:
             stepsize: the stepsize in Hz, must be integer division of reference frequency
         """
@@ -95,7 +91,6 @@ class S5i_module(object):
         Sets the frequency with the grid set by set_stepsize. Will calculate the correct
         register values and raises ValueErrors if the frequency is not possible. Either
         by limitations in the stepsize or when it exceeds the chip requirements.
-
         Args:
             frequency: wanted output frequency (Hz)
         """
@@ -148,11 +143,10 @@ class S5i_module(object):
 
     def set_frequency_optimally(self, frequency):
         """Calculates and sets the RF output to given frequency
-
+        
         Calculates the registers for the given RF frequency, optimized for the
         smalles value for the multiplier to minimize the (phase) noise. Writes
         the settings to the module after calculation
-
         Args:
             frequency: the wanted output frequency in MHz
         """

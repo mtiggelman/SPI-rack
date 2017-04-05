@@ -1,4 +1,5 @@
 import serial
+from chip_mode import *
 
 class SPI_rack(serial.Serial):
     """SPI rack interface class
@@ -114,3 +115,33 @@ class SPI_rack(serial.Serial):
             print("Received less bytes than expected")
 
         return [ord(c) for c in r_data]
+
+    def get_battery(self):
+        """Returns battery voltages
+
+        Calculates the battery voltages from the ADC channel values.
+
+        Returns:
+            Voltages (float): [VbatPlus, VbatMin]
+        """
+        self.read_adc(1)
+        Vbatplus = 2.123*3.3*self.read_adc(1)/4096.0
+        self.read_adc(0)
+        Vbatmin = -2.084*3.3*self.read_adc(0)/4096.0
+        return [Vbatplus, Vbatmin]
+
+    def read_adc(self, channel):
+        """Reads the ADC for battery voltage
+
+        Reads the given ADC channel. These channels are connected to the raw
+        of battery. Output needs to calculated due to voltage divider. Function
+        used internally.
+
+        Args:
+            channel (int: 0-1): the ADC channel to be read
+        Returns:
+            12-bit ADC data (int)
+        """
+        s_data = bytearray([1, 160|(channel<<6), 0])
+        r_data = self.read_data(0, 0, MCP320x_MODE, s_data)
+        return (r_data[1]&0xF)<<8 | r_data[2]
