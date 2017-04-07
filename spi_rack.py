@@ -1,5 +1,6 @@
 import serial
 from chip_mode import *
+from sys import version_info
 
 class SPI_rack(serial.Serial):
     """SPI rack interface class
@@ -114,7 +115,10 @@ class SPI_rack(serial.Serial):
         if len(r_data) < read_length:
             print("Received less bytes than expected")
 
-        return [ord(c) for c in r_data]
+        if version_info[0] < 3:
+            return [ord(c) for c in r_data]
+        else:
+            return r_data
 
     def get_battery(self):
         """Returns battery voltages
