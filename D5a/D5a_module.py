@@ -199,32 +199,33 @@ class D5a_module(object):
             DAC: DAC inside module to update voltage of (int: 0-15)
             voltage: new DAC voltage (float)
         """
-        self.voltages[DAC] = voltage
+        step = self.get_stepsize(DAC)
 
         if self.span[DAC] == D5a_module.range_4V_uni:
-            a = (2**18-1)/4.0
-            b = 0
+            bit_value = int(voltage / step)
+            self.voltages[DAC] = bit_value * step
             maxV = 4.0
             minV = 0.0
         elif self.span[DAC] == D5a_module.range_4V_bi:
-            a = (2**18-1)/8.0
-            b = 2**17
+            bit_value = int((voltage + 4.0) / step)
+            self.voltages[DAC] = (bit_value * step) - 4.0
             maxV = 4.0
             minV = -4.0
         elif self.span[DAC] == D5a_module.range_2V_bi:
-            a = (2**18-1)/4.0
-            b = 2**17
+            bit_value = int((voltage + 2.0) / step)
+            self.voltages[DAC] = (bit_value * step) - 2.0
             maxV = 2.0
             minV = -2.0
 
         if voltage > maxV:
-            voltage = maxV
-            print("Voltage too high for set span, set to max value")
+            bit_value = (2**18)-1
+            self.voltages[DAC] = maxV
+            print("Voltage too high for set span, DAC set to max value")
         elif voltage < minV:
-            voltage = minV
-            print("Voltage too low for set span, set to min value")
+            self.voltages[DAC] = minV
+            bit_value = 0
+            print("Voltage too low for set span, DAC set to min value")
 
-        bit_value = int(a*voltage + b)
         self.change_value_update(DAC, bit_value)
 
     def get_stepsize(self, DAC):
@@ -246,3 +247,44 @@ class D5a_module(object):
             return 8.0/(2**18)
         if self.span[DAC] == D5a_module.range_2V_bi:
             return 4.0/(2**18)
+
+    def get_settings(self, DAC):
+        """Reads current DAC settings
+
+        Reads back the DAC registers of the given DAC for both the code
+        and the span. Calculates the voltage set with the read out span.
+
+        Args:
+            DAC: DAC of which settings will be read (int: 0-15)
+        Returns:
+            List with voltage and span: [voltages, span] (int)
+        """
+        # Determine which DAC in IC by checking even/uneven
+        address = (DAC%2)<<1
+        # Determine in which IC the DAC is, for SPI chip select
+        DAC_ic = DAC//2
+
+        # Read code command
+        command = 0b1101
+        data = bytearray([(command<<4) | address, 0, 0, 0])
+
+        code_data = self.spi_rack.read_data(self.module, DAC_ic, LTC2758_MODE, data)
+        code = (code_data[1]<<10) | (code_data[2]<<2) | (code_data[3]>>6)
+
+        # Read span command
+        command = 0b1100
+        data = bytearray([(command<<4) | address, 0, 0, 0])
+
+        span_data = self.spi_rack.read_data(self.module, DAC_ic, LTC2758_MODE, data)
+        span = span_data[2]
+
+        if span == D5a_module.range_4V_uni:
+            voltage = (code*4.0/(2**18))
+        elif span == D5a_module.range_4V_bi:
+            voltage = (code*8.0/(2**18)) - 4.0
+        elif span == D5a_module.range_2V_bi:
+            voltage = (code*4.0/(2**18)) - 2.0
+        else:
+            raise ValueError("Span {} should not be used. Accepted values are: {}".format(span, [0,2,4]))
+
+        return [voltage, span]
