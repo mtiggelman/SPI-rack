@@ -1,5 +1,5 @@
-from spi_rack import *
-from chip_mode import *
+from .spi_rack import *
+from .chip_mode import *
 import math
 
 class S5i_module(object):
@@ -143,7 +143,7 @@ class S5i_module(object):
 
     def set_frequency_optimally(self, frequency):
         """Calculates and sets the RF output to given frequency
-        
+
         Calculates the registers for the given RF frequency, optimized for the
         smalles value for the multiplier to minimize the (phase) noise. Writes
         the settings to the module after calculation

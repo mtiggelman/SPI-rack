@@ -1,5 +1,5 @@
 import serial
-from chip_mode import *
+from .chip_mode import *
 from sys import version_info
 
 class SPI_rack(serial.Serial):
