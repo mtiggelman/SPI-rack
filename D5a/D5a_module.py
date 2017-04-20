@@ -1,3 +1,4 @@
+import numpy as np
 from spi_rack import *
 from chip_mode import *
 
@@ -25,7 +26,7 @@ class D5a_module(object):
     range_4V_bi = 2
     range_2V_bi = 4
 
-    def __init__(self, spi_rack, module):
+    def __init__(self, spi_rack, module, reset_voltages=False):
         """Inits D5a module class
 
         The D5a_module class needs an SPI_rack object at initiation. All
@@ -40,13 +41,17 @@ class D5a_module(object):
         """
         self.spi_rack = spi_rack
         self.module = module
-        self.span = [0]*16
-        self.voltages = [0]*16
+        self.span = [np.NaN]*16
+        self.voltages = [np.NaN]*16
 
         for i in range(16):
+            self.voltages[i], self.span[i] = self.get_settings(i)
+                
+        if reset_voltages:
+            for i in range(16):
             # Set all DACs to +-4V and midscale (0V)
-            self.change_span(i, D5a_module.range_4V_bi)
-            self.set_voltage(i, 0.0)
+                self.change_span(i, D5a_module.range_4V_bi)
+                self.set_voltage(i, 0.0)
 
     def change_span_update(self, DAC, span):
         """Changes the software span of selected DAC with update
