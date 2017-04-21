@@ -26,7 +26,7 @@ class D5a_module(object):
     range_4V_bi = 2
     range_2V_bi = 4
 
-    def __init__(self, spi_rack, module, reset_voltages=False):
+    def __init__(self, spi_rack, module, reset_voltages=True):
         """Inits D5a module class
 
         The D5a_module class needs an SPI_rack object at initiation. All
@@ -36,6 +36,8 @@ class D5a_module(object):
         Args:
             spi_rack: SPI_rack class object via which the communication runs
             module: module number set on the hardware
+            reset_voltages (bool): if True, then reset all voltages to zero and
+                                   change the span to `range_4V_bi`
         Example:
             D5a_1 = D5a_module(SPI_Rack_1, 4)
         """
