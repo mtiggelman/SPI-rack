@@ -5,7 +5,7 @@ setup(name='spirack',
       description='Drivers for the QuTech SPI-rack',
       url='https://github.com/Rubenknex/SPI-rack',
       author='Marijn Tiggelman',
-      author_email='marijn.tiggelman@gmail.com',
+      author_email='qutechdev@gmail.com',
       license='MIT',
       packages=['spirack',
                 'spirack/drivers'

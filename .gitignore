@@ -52,6 +52,9 @@ coverage.xml
 *.mo
 *.pot
 
+# PyPi login
+*.pypirc
+
 # Django stuff:
 *.log
 local_settings.py
