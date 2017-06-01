@@ -43,6 +43,7 @@ class SPI_rack(serial.Serial):
 
         self.active_module = None
         self.active_chip = None
+        self.active_speed  = None
         self.ref_frequency = ref_frequency
 
     def set_ref_frequency(self, frequency):
@@ -57,7 +58,7 @@ class SPI_rack(serial.Serial):
         """
         self.ref_frequency = frequency
 
-    def set_active(self, module, chip, SPI_mode):
+    def set_active(self, module, chip, SPI_mode, SPI_speed):
         """Set the current module/chip to active on controller unit
 
         By writing 'c' and then chip/module combination, this chip will
@@ -68,31 +69,35 @@ class SPI_rack(serial.Serial):
             module: module number to set active (int)
             chip: chip in module to set active (int)
             SPI_mode: SPI mode of the chip to be activated (int)
+            SPI_speed: SPI clock speed of the chip to be activated (int)
         """
 
-        s_data = bytearray([ord('c'), (chip<<4) | module, SPI_mode])
+        s_data = bytearray([ord('c'), (chip<<4) | module, SPI_mode, SPI_speed])
         self.write(s_data)
 
         self.active_module = module
-        self.active_chip = chip
+        self.active_chip   = chip
+        self.active_speed  = SPI_speed
 
-    def write_data(self, module, chip, SPI_mode, data):
+    def write_data(self, module, chip, SPI_mode, SPI_speed, data):
         """Write data to selected module/chip combination
 
         Args:
-            module: number of the module to send data to (int)
-            chip: chip in module to send data to (int)
-            SPI_mode: SPI mode of the chip to be activated (int)
-            data: array of data to be send (bytearray)
+            module   : number of the module to send data to (int)
+            chip     : chip in module to send data to (int)
+            SPI_mode : SPI mode of the chip to be activated (int)
+            SPI_speed: SPI clock speed of the chip to be activated (int)
+            data     : array of data to be send (bytearray)
         """
 
-        if self.active_module != module or self.active_chip != chip:
-            self.set_active(module, chip, SPI_mode)
+        if (self.active_module != module or self.active_chip != chip or self.active_speed != SPI_speed):
+            self.set_active(module, chip, SPI_mode, SPI_speed)
 
-        data = bytearray([ord('w')]) + data
-        self.write(data)
+        s_data = bytearray([ord('w')]) + data
 
-    def read_data(self, module, chip, SPI_mode, data):
+        self.write(s_data)
+
+    def read_data(self, module, chip, SPI_mode, SPI_speed, data):
         """Read data from selected module/chip combination
 
         Args:
@@ -105,7 +110,7 @@ class SPI_rack(serial.Serial):
             Bytes received from module/chip (int list)
         """
         if self.active_module != module or self.active_chip != chip:
-            self.set_active(module, chip, SPI_mode)
+            self.set_active(module, chip, SPI_mode, SPI_speed)
 
         read_length = len(data)
         data = bytearray([ord('r')]) + data
@@ -146,6 +151,40 @@ class SPI_rack(serial.Serial):
         Returns:
             12-bit ADC data (int)
         """
+
         s_data = bytearray([1, 160|(channel<<6), 0])
-        r_data = self.read_data(0, 0, MCP320x_MODE, s_data)
-        return (r_data[1]&0xF)<<8 | r_data[2]
+        r_data = self.read_data(0, 0, MCP320x_MODE, MCP320x_SPEED, s_data)
+
+        return (r_data[1] & 0xf)<<8 | r_data[2]
+
+    def unlock(self):
+        """Unlocks SPI communication
+
+        After power-up of the Arduino DUE, SPI write communication is
+        blocked as a safety precaution when working with DAC Modules.
+        By preventing SPI write actions to be performed, the current DAC
+        state is preserved and can be read back by the user.
+
+        Args:
+            none
+        Returns:
+            none
+        """
+
+        s_data = bytearray([ord('u')])
+        self.write(s_data)
+
+
+    def lock(self):
+        """Locks SPI communication
+
+        Prevent SPI write actions. See 'unlock'.
+
+        Args:
+            none
+        Returns:
+            none
+        """
+
+        s_data = bytearray([ord('l')])
+        self.write(s_data)

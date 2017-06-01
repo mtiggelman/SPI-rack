@@ -84,7 +84,7 @@ class D5a_module(object):
         # Determine in which IC the DAC is, for SPI chip select
         DAC_ic = DAC//2
         # send data via controller
-        self.spi_rack.write_data(self.module, DAC_ic, LTC2758_MODE, data)
+        self.spi_rack.write_data(self.module, DAC_ic, LTC2758_MODE, LTC2758_SPEED, data)
 
     def change_span(self, DAC, span):
         """Changes the software span of selected DAC without update
@@ -115,7 +115,7 @@ class D5a_module(object):
         # Determine in which IC the DAC is, for SPI chip select
         DAC_ic = DAC//2
         # send data via controller
-        self.spi_rack.write_data(self.module, DAC_ic, LTC2758_MODE, data)
+        self.spi_rack.write_data(self.module, DAC_ic, LTC2758_MODE, LTC2758_SPEED, data)
 
     def change_value_update(self, DAC, value):
         """Changes and updates the DAC value
@@ -141,7 +141,7 @@ class D5a_module(object):
         # Determine in which IC the DAC is, for SPI chip select
         DAC_ic = DAC//2
         # send data via controller
-        self.spi_rack.write_data(self.module, DAC_ic, LTC2758_MODE, data)
+        self.spi_rack.write_data(self.module, DAC_ic, LTC2758_MODE, LTC2758_SPEED, data)
 
     def change_value(self, DAC, value):
         """Changes the DAC value
@@ -167,7 +167,7 @@ class D5a_module(object):
         # Determine in which IC the DAC is, for SPI chip select
         DAC_ic = DAC//2
         # send data via controller
-        self.spi_rack.write_data(self.module, DAC_ic, LTC2758_MODE, data)
+        self.spi_rack.write_data(self.module, DAC_ic, LTC2758_MODE, LTC2758_SPEED, data)
 
     def update(self, DAC):
         """Updates the output of the DAC to the written value
@@ -192,7 +192,7 @@ class D5a_module(object):
         # Determine in which IC the DAC is, for SPI chip select
         DAC_ic = DAC//2
         # send data via controller
-        self.spi_rack.write_data(self.module, DAC_ic, LTC2758_MODE, data)
+        self.spi_rack.write_data(self.module, DAC_ic, LTC2758_MODE, LTC2758_SPEED, data)
 
     def set_voltage(self, DAC, voltage):
         """Sets the DAC output voltage and updates the DAC output
@@ -276,14 +276,14 @@ class D5a_module(object):
         command = 0b1101
         data = bytearray([(command<<4) | address, 0, 0, 0])
 
-        code_data = self.spi_rack.read_data(self.module, DAC_ic, LTC2758_MODE, data)
+        code_data = self.spi_rack.read_data(self.module, DAC_ic, LTC2758_MODE, LTC2758_SPEED, data)
         code = (code_data[1]<<10) | (code_data[2]<<2) | (code_data[3]>>6)
 
         # Read span command
         command = 0b1100
         data = bytearray([(command<<4) | address, 0, 0, 0])
 
-        span_data = self.spi_rack.read_data(self.module, DAC_ic, LTC2758_MODE, data)
+        span_data = self.spi_rack.read_data(self.module, DAC_ic, LTC2758_MODE, LTC2758_SPEED, data)
         span = span_data[2]
 
         if span == D5a_module.range_4V_uni:

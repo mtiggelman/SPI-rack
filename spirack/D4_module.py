@@ -41,7 +41,7 @@ class D4_module(object):
         Write given data to register of the given ADC
         """
         s_data = bytearray([reg, data>>8, data & 0xFF])
-        self.spi_rack.write_data(self.module, ADC, AD7175_MODE, s_data)
+        self.spi_rack.write_data(self.module, ADC, AD7175_MODE, AD7175_SPEED, s_data)
 
     def read_data(self, ADC, reg, no_bytes):
         """
@@ -49,7 +49,7 @@ class D4_module(object):
         """
 
         s_data = bytearray([ reg | (1<<6)] + no_bytes*[0])
-        r_i_data = self.spi_rack.read_data(self.module, ADC, AD7175_MODE, s_data)
+        r_i_data = self.spi_rack.read_data(self.module, ADC, AD7175_MODE, AD7175_SPEED, s_data)
 
         return r_i_data
 

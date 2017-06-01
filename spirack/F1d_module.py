@@ -51,7 +51,7 @@ class F1d_module(object):
             12-bit ADC data (int)
         """
         s_data = bytearray([1, 160|(channel<<6), 0])
-        r_data = self.spi_rack.read_data(self.module, 1, MCP320x_MODE, s_data)
+        r_data = self.spi_rack.read_data(self.module, 1, MCP320x_MODE, MCP320x_SPEED, s_data)
         return (r_data[1]&0xF)<<8 | r_data[2]
 
     def enable_remote(self, enable):
@@ -63,15 +63,15 @@ class F1d_module(object):
         Args:
             enable (bool/int: 0-1): enables/disables remote control
         """
-        self.spi_rack.write_data(self.module, 5, 0, bytearray([enable]))
+        self.spi_rack.write_data(self.module, 5, 0, BICPINS_SPEED, bytearray([enable]))
 
     def clear_rf_clip(self):
         """Clears rf clip bit
 
         Use this function to clear the RF clip bit once it has been read.
         """
-        self.spi_rack.write_data(self.module, 0, 0, bytearray([self.remote_settings&0x3F]))
-        self.spi_rack.write_data(self.module, 0, 0, bytearray([self.remote_settings|0x40]))
+        self.spi_rack.write_data(self.module, 0, 0, BICPINS_SPEED, bytearray([self.remote_settings&0x3F]))
+        self.spi_rack.write_data(self.module, 0, 0, BICPINS_SPEED, bytearray([self.remote_settings|0x40]))
 
     def rf_clipped(self):
         """Return if the RF clipped
@@ -81,7 +81,7 @@ class F1d_module(object):
         Returns:
             True/False depending if the RF clipped (bool)
         """
-        data = self.spi_rack.read_data(self.module, 4, 0, bytearray([0]))
+        data = self.spi_rack.read_data(self.module, 4, 0, BICPINS_SPEED, bytearray([0]))
         return bool(data[0]&0x01)
 
     def set_IQ_filter(self, value):
@@ -108,7 +108,7 @@ class F1d_module(object):
         elif value == 30:
             self.remote_settings |= 1
 
-        self.spi_rack.write_data(self.module, 0, 0, bytearray([self.remote_settings]))
+        self.spi_rack.write_data(self.module, 0, 0, BICPINS_SPEED, bytearray([self.remote_settings]))
 
     def set_I_gain(self, value):
         """Sets I channel gain
@@ -133,7 +133,7 @@ class F1d_module(object):
             self.remote_settings |= (3<<2)
         else:
             self.remote_settings |= (2<<2)
-        self.spi_rack.write_data(self.module, 0, 0, bytearray([self.remote_settings]))
+        self.spi_rack.write_data(self.module, 0, 0, BICPINS_SPEED, bytearray([self.remote_settings]))
 
     def set_Q_gain(self, value):
         """Sets Q channel gain
@@ -158,7 +158,7 @@ class F1d_module(object):
             self.remote_settings |= (3<<4)
         else:
             self.remote_settings |= (2<<4)
-        self.spi_rack.write_data(self.module, 0, 0, bytearray([self.remote_settings]))
+        self.spi_rack.write_data(self.module, 0, 0, BICPINS_SPEED, bytearray([self.remote_settings]))
 
     def get_RF_level(self):
         """Get RF input power

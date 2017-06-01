@@ -60,7 +60,7 @@ class S5i_module(object):
             b4 = reg&0xFF
             data = bytearray([b1, b2, b3, b4])
             # Write to ADF at SPI address 0
-            self.spi_rack.write_data(self.module, 0, ADF4351_MODE, data)
+            self.spi_rack.write_data(self.module, 0, ADF4351_MODE, ADF4351_SPEED, data)
 
     def use_external_reference(self, use_external):
         #TODO: set bit on backplane to toggle between the two physically
