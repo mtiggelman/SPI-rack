@@ -29,11 +29,7 @@ setup(name='spirack',
       author_email='qutechdev@gmail.com',
       license='MIT',
       packages=['spirack'],
-<<<<<<< HEAD
       keywords = ['SPI', 'Qcodes', 'SPI-rack'],
-=======
-      keywords = ['SPI', 'Qcodes'],
->>>>>>> origin/master
       classifiers = [],
       install_requires=[
         'pyserial',
