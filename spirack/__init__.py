@@ -1,3 +1,5 @@
+from .version import __version__
+
 from .spi_rack import SPI_rack
 
 from .D4_module import D4_module
