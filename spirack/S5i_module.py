@@ -14,7 +14,7 @@ class S5i_module(object):
         rfFrequency: the current set RF output frequency
     """
 
-    def __init__(self, spi_rack, module, frequency=100e6):
+    def __init__(self, spi_rack, module, frequency=100e6, enable_output=1, output_level=1.0):
     #def __init__(self, module, frequency=100e6):
         """Inits S5i module class
 
@@ -25,8 +25,10 @@ class S5i_module(object):
             spi_rack: SPI_rack class object via which the communication runs
             module: module number set on the hardware
             frequency: RF frequency at startup (in Hz), default 100 MHz
+            output_level: RF output level, value between 0-1. Default at full power (1.0)
         Example:
             S5i_1 = S5i_module(SPI_Rack_1, 4)
+            S5i_2 = S5i_module(SPI_rack_1, 2, frequency=200, output_level=0.3)
         """
         self.spi_rack = spi_rack
         self.module = module
@@ -35,7 +37,9 @@ class S5i_module(object):
         self.stepsize = 1e6
         self.ref_frequency = 10e6
         self.use_external = 0
-        self.outputPower = None
+        self.output_status = enable_output
+
+        self.set_output_power(output_level)
 
         # These are the 6 registers present in the ADF4351
         self.registers = 6*[0]
@@ -62,6 +66,36 @@ class S5i_module(object):
             # Write to ADF at SPI address 0
             self.spi_rack.write_data(self.module, 0, ADF4351_MODE, ADF4351_SPEED, data)
 
+    def set_output_power(self, level):
+        """Sets the source output power
+
+        Sets the output power of the unit. Can be varied over ~30 dB.
+        Args:
+            level: value between 0 and 1 (float:0-1)
+        """
+        if level < 0 or level > 1:
+            raise ValueError('Level {} not allowed. Has to be between 0 and 1'.format(level))
+
+        value = int((2**16-1) * level)
+        s_data = bytearray([64|(value>>10), (value>>2)&0xFF, (value&3)<<6])
+        self.spi_rack.write_data(self.module, 1, MAX521x_MODE, MAX521x_SPEED, s_data)
+
+    def enable_output_soft(self, enable):
+        """Enables/disables the output of the generator IC
+
+        Enables/disables the output of the IC, not the same as the mute input on
+        the front of the unit. This has less attenuation and is slower.
+        Args:
+            enable (bool/int: 0-1): enables/disables RF output
+        """
+        if enable != 0 :
+            enable = 1
+        self.registers[4] &= 0xFFFFFFDF
+        self.registers[4] |= (enable<<5)
+        self.write_registers()
+        self.output_status = enable
+
+    # Does not do anythin yet
     def use_external_reference(self, use_external):
         #TODO: set bit on backplane to toggle between the two physically
         if use_external == 1:
@@ -110,7 +144,6 @@ class S5i_module(object):
         else:
             prescaler = 0
             Nmin = 23
-
         #Get R from stepsize and reference frequency
         R = int(self.ref_frequency / self.stepsize)
 
@@ -122,20 +155,19 @@ class S5i_module(object):
             fmin = max(Nmin * self.stepsize, 40e6)
             fmax = min(self.stepsize*65535, 4.4e9)
             raise ValueError('Frequency {} not possible with stepsize {}. Allowed frequencies: {}<f<{}'.format(frequency, self.stepsize, fmin, fmax))
-
         #Check that band select is smaller than 125 kHz, otherwise divide
         #until it is
         fpfd = self.ref_frequency/R
         band_sel = 1
-        if fpfd > 125e3:
-            band_sel = int(math.ceil(fpfd/125e3))
+        if fpfd > 50e3:
+            band_sel = int(math.ceil(fpfd/50e3))
 
         # In REG4: Set calculated divider and band select, enable RF out at max power
-        self.registers[4] = (div<<20) | (band_sel<<12) | (1<<5) | (3<<3) | 4
+        self.registers[4] = (div<<20) | (band_sel<<12) | (self.output_status<<5) | (3<<3) | 4
         # In REG2: Set calculated R value, enable double buffer, LDF=INT-N, LDP=6ns, PD_POL = Positive
         self.registers[2] = (R<<14) | (1<<13) | (7<<9) | (1<<8) | (1<<7) | (1<<6) | 2
         # In REG1: Set prescaler value
-        self.registers[1] = (prescaler <<27) | (2<<3) | 1
+        self.registers[1] = (prescaler <<27) | (1<<15) | (2<<3) | 1
         # In REG0: Set calculated INT value
         self.registers[0] = (INT<<15)
 
@@ -148,7 +180,7 @@ class S5i_module(object):
         smalles value for the multiplier to minimize the (phase) noise. Writes
         the settings to the module after calculation
         Args:
-            frequency: the wanted output frequency in MHz
+            frequency: the wanted output frequency in Hz
         """
         ###
         #TODO:  add doubler/divided in algorithm to potentially lower noise
@@ -157,20 +189,19 @@ class S5i_module(object):
         ###
 
         #Get the backplane reference frequency
-        #fref = float(self.spi_rack.ref_frequency)/10.0e6
-        fref = 10.0
+        fref = float(self.spi_rack.ref_frequency)
+
         #Calculate VCO output divider:
         div = 0
         for n in range(0,7):
             VCO = 2**n * frequency
-            if VCO >= 2200 and VCO <= 4400:
+            if VCO >= 2.2e9 and VCO <= 4.4e9:
                 div = n
                 break
-        print("div val: " + str(div))
-        print("VCO: " + str(VCO))
+
         #Prescaler: 0 (4/5) if < 3.6 GHz, 1 (8/9) if >= 3.6 GHz
         #Nmin changes with prescaler:
-        if frequency >= 3600.0:
+        if frequency >= 3.6e9:
             prescaler = 1
             Nmin = 75
         else:
@@ -187,20 +218,16 @@ class S5i_module(object):
                 INT = n
                 R = int(R_t)
                 break
-        print("INT: " + str(INT))
-        print("R: " + str(R))
+
         #Check that band select is smaller than 125 kHz, otherwise divide
         #until it is
         fpfd = fref/R
-        print("fpfd: " + str(fpfd))
         band_sel = 1
-        if fpfd > 0.125:
-            band_sel = int(math.ceil(fpfd/0.125))
-        print("band_sel: " + str(band_sel))
-        print("fpfd new: " + str(fpfd/band_sel))
+        if fpfd > 50e3:
+            band_sel = int(math.ceil(fpfd/50e3))
 
         # In REG4: Set calculated divider and band select, enable RF out at max power
-        self.registers[4] = (div<<20) | (band_sel<<12) | (1<<5) | (3<<3) | 4
+        self.registers[4] = (div<<20) | (band_sel<<12) | (self.output_status<<5) | (3<<3) | 4
         # In REG2: Set calculated R value, enable double buffer, LDF=INT-N, LDP=6ns, PD_POL = Positive
         self.registers[2] = (R<<14) | (1<<13) | (7<<9) | (1<<8) | (1<<7) | (1<<6) | 2
         # In REG1: Set prescaler value
