@@ -159,8 +159,8 @@ class S5i_module(object):
         #until it is
         fpfd = self.ref_frequency/R
         band_sel = 1
-        if fpfd > 50e3:
-            band_sel = int(math.ceil(fpfd/50e3))
+        if fpfd > 10e3:
+            band_sel = int(math.ceil(fpfd/10e3))
 
         # In REG4: Set calculated divider and band select, enable RF out at max power
         self.registers[4] = (div<<20) | (band_sel<<12) | (self.output_status<<5) | (3<<3) | 4
@@ -223,8 +223,8 @@ class S5i_module(object):
         #until it is
         fpfd = fref/R
         band_sel = 1
-        if fpfd > 50e3:
-            band_sel = int(math.ceil(fpfd/50e3))
+        if fpfd > 10e3:
+            band_sel = int(math.ceil(fpfd/10e3))
 
         # In REG4: Set calculated divider and band select, enable RF out at max power
         self.registers[4] = (div<<20) | (band_sel<<12) | (self.output_status<<5) | (3<<3) | 4
