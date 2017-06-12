@@ -1,6 +1,7 @@
 from .spi_rack import *
 from .chip_mode import *
 import math
+import numpy as np
 
 class S5i_module(object):
     """S5i module interface class
@@ -128,6 +129,9 @@ class S5i_module(object):
         Args:
             frequency: wanted output frequency (Hz)
         """
+        if frequency > 4.4e9 or frequency < 40e6:
+            raise ValueError('Frequency {} not possible. Allowed frequencies: {}<f<{}'.format(frequency, 40e6, 4.4e9))
+
         #Calculate VCO output divider:
         div = 0
         for n in range(0,7):
@@ -155,7 +159,8 @@ class S5i_module(object):
             fmin = max(Nmin * self.stepsize, 40e6)
             fmax = min(self.stepsize*65535, 4.4e9)
             raise ValueError('Frequency {} not possible with stepsize {}. Allowed frequencies: {}<f<{}'.format(frequency, self.stepsize, fmin, fmax))
-        #Check that band select is smaller than 125 kHz, otherwise divide
+
+        #Check that band select is smaller than 10 kHz, otherwise divide
         #until it is
         fpfd = self.ref_frequency/R
         band_sel = 1
@@ -177,16 +182,15 @@ class S5i_module(object):
         """Calculates and sets the RF output to given frequency
 
         Calculates the registers for the given RF frequency, optimized for the
-        smalles value for the multiplier to minimize the (phase) noise. Writes
-        the settings to the module after calculation
+        smalles value for the multiplier to minimize the (phase) noise. If the wanted
+        frequency is not possible, it will print a warning and set the frequency to
+        the closest possible. Writes the settings to the module after calculation
         Args:
             frequency: the wanted output frequency in Hz
         """
-        ###
-        #TODO:  add doubler/divided in algorithm to potentially lower noise
-        #       add checks to see if possible to set frequency
-        #       add user feedback in case of problems
-        ###
+
+        if frequency > 4.4e9 or frequency < 40e6:
+            raise ValueError('Frequency {} not possible. Allowed frequencies: {}<f<{}'.format(frequency, 40e6, 4.4e9))
 
         #Get the backplane reference frequency
         fref = float(self.spi_rack.ref_frequency)
@@ -209,17 +213,19 @@ class S5i_module(object):
             Nmin = 23
 
         #Find INT/R relation with minimum size for INT to keep noise as low
-        #as possible
-        INT = 0
-        R = 0
-        for n in range(Nmin, 65536):
-            R_t = (n*fref)/(frequency)
-            if R_t.is_integer():
-                INT = n
-                R = int(R_t)
-                break
+        #as possible. Find closest possible frequency if not possible and warn user
+        Nmax = int(1023 * frequency / fref)
+        n = np.arange(Nmin, Nmax)
+        R_t = n*fref/frequency
+        R_t_r = np.around(R_t)
+        index = np.argmin(np.abs(R_t - R_t_r))
+        R = int(R_t_r[index])
+        INT = n[index]
+        actual_frequency = INT * fref/R
+        if actual_frequency != frequency:
+            print("Warning! Frequency " + str(frequency) + " not possible, set to closest frequency: " + str(actual_frequency))
 
-        #Check that band select is smaller than 125 kHz, otherwise divide
+        #Check that band select is smaller than 10 kHz, otherwise divide
         #until it is
         fpfd = fref/R
         band_sel = 1
