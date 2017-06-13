@@ -166,7 +166,10 @@ class S5i_module(object):
         band_sel = 1
         if fpfd > 10e3:
             band_sel = int(math.ceil(fpfd/10e3))
+        if band_sel > 255:
+            band_sel = 255
 
+        self.rf_frequency = frequency
         # In REG4: Set calculated divider and band select, enable RF out at max power
         self.registers[4] = (div<<20) | (band_sel<<12) | (self.output_status<<5) | (3<<3) | 4
         # In REG2: Set calculated R value, enable double buffer, LDF=INT-N, LDP=6ns, PD_POL = Positive
@@ -225,13 +228,15 @@ class S5i_module(object):
         if actual_frequency != frequency:
             print("Warning! Frequency " + str(frequency) + " not possible, set to closest frequency: " + str(actual_frequency))
 
+        self.rf_frequency = actual_frequency
         #Check that band select is smaller than 10 kHz, otherwise divide
         #until it is
         fpfd = fref/R
         band_sel = 1
         if fpfd > 10e3:
             band_sel = int(math.ceil(fpfd/10e3))
-
+        if band_sel > 255:
+            band_sel = 255
         # In REG4: Set calculated divider and band select, enable RF out at max power
         self.registers[4] = (div<<20) | (band_sel<<12) | (self.output_status<<5) | (3<<3) | 4
         # In REG2: Set calculated R value, enable double buffer, LDF=INT-N, LDP=6ns, PD_POL = Positive
