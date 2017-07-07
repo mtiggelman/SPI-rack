@@ -42,6 +42,9 @@ class S5i_module(object):
 
         self.set_output_power(output_level)
 
+        self.double = 0
+        self.div2 = 0
+
         # These are the 6 registers present in the ADF4351
         self.registers = 6*[0]
         # In REG3: set ABP=1 (3 ns, INT-N) and CHARGE CANCEL=1
@@ -66,6 +69,12 @@ class S5i_module(object):
             data = bytearray([b1, b2, b3, b4])
             # Write to ADF at SPI address 0
             self.spi_rack.write_data(self.module, 0, ADF4351_MODE, ADF4351_SPEED, data)
+
+    def set_doubler(self, value):
+        self.double = value
+
+    def set_div2(self, value):
+        self.div2 = value
 
     def set_output_power(self, level):
         """Sets the source output power
@@ -132,6 +141,13 @@ class S5i_module(object):
         if frequency > 4.4e9 or frequency < 40e6:
             raise ValueError('Frequency {} not possible. Allowed frequencies: {}<f<{}'.format(frequency, 40e6, 4.4e9))
 
+        if self.div2:
+            local_ref = self.ref_frequency/2
+        elif self.double:
+            local_ref = self.ref_frequency*2
+        else:
+            local_ref = self.ref_frequency
+
         #Calculate VCO output divider:
         div = 0
         for n in range(0,7):
@@ -142,14 +158,14 @@ class S5i_module(object):
 
         #Prescaler: 0 (4/5) if < 3.6 GHz, 1 (8/9) if >= 3.6 GHz
         #Nmin changes with prescaler:
-        if frequency >= 3.6e9:
+        if frequency >= 1.0e9:
             prescaler = 1
             Nmin = 75
         else:
             prescaler = 0
             Nmin = 23
         #Get R from stepsize and reference frequency
-        R = int(self.ref_frequency / self.stepsize)
+        R = int(local_ref / self.stepsize)
 
         if frequency % self.stepsize != 0.0:
             raise ValueError('Frequency must be integer multiple of stepsize: {}'.format(self.stepsize))
@@ -162,18 +178,26 @@ class S5i_module(object):
 
         #Check that band select is smaller than 10 kHz, otherwise divide
         #until it is
-        fpfd = self.ref_frequency/R
+        fpfd = local_ref/R
+
         band_sel = 1
         if fpfd > 10e3:
             band_sel = int(math.ceil(fpfd/10e3))
         if band_sel > 255:
             band_sel = 255
 
+        #print("Div: " + str(div))
+        #print("prescaler: " + str(prescaler))
+        #print("R: " + str(R))
+        #print("INT: " + str(INT))
+        #print("fpfd: " + str(fpfd))
+        #print("band_sel: " + str(band_sel))
+
         self.rf_frequency = frequency
         # In REG4: Set calculated divider and band select, enable RF out at max power
         self.registers[4] = (div<<20) | (band_sel<<12) | (self.output_status<<5) | (3<<3) | 4
         # In REG2: Set calculated R value, enable double buffer, LDF=INT-N, LDP=6ns, PD_POL = Positive
-        self.registers[2] = (R<<14) | (1<<13) | (7<<9) | (1<<8) | (1<<7) | (1<<6) | 2
+        self.registers[2] = (self.double<<25) | (self.div2<<24) | (R<<14) | (1<<13) | (7<<9) | (1<<8) | (1<<7) | (1<<6) | 2
         # In REG1: Set prescaler value
         self.registers[1] = (prescaler <<27) | (1<<15) | (2<<3) | 1
         # In REG0: Set calculated INT value
@@ -208,7 +232,7 @@ class S5i_module(object):
 
         #Prescaler: 0 (4/5) if < 3.6 GHz, 1 (8/9) if >= 3.6 GHz
         #Nmin changes with prescaler:
-        if frequency >= 3.6e9:
+        if frequency >= 1.0e9:
             prescaler = 1
             Nmin = 75
         else:

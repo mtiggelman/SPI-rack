@@ -225,11 +225,11 @@ class D5a_module(object):
             maxV = 2.0
             minV = -2.0
 
-        if voltage > maxV:
+        if voltage >= maxV:
             bit_value = (2**18)-1
             self.voltages[DAC] = maxV
             print("Voltage too high for set span, DAC set to max value")
-        elif voltage < minV:
+        elif voltage <= minV:
             self.voltages[DAC] = minV
             bit_value = 0
             print("Voltage too low for set span, DAC set to min value")
