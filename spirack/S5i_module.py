@@ -11,8 +11,9 @@ class S5i_module(object):
     up frequency can be given, otherwise it defaults to 100 MHz.
     The RF frequency can be changed via setRfFrequency, which calculates the
     register values and updates the frequency of the ADF4351.
+
     Attributes:
-        rfFrequency: the current set RF output frequency
+        rfFrequency (float): the current set RF output frequency
     """
 
     def __init__(self, spi_rack, module, frequency=100e6, enable_output=1, output_level=1.0):
@@ -22,11 +23,13 @@ class S5i_module(object):
         The S5i module needs an SPI_rack class for communication. If no frequency
         is given at initialization, the output will be set to 100 MHz with a
         stepsize of 1 MHz
+
         Args:
             spi_rack: SPI_rack class object via which the communication runs
             module: module number set on the hardware
             frequency: RF frequency at startup (in Hz), default 100 MHz
             output_level: RF output level, value between 0-1. Default at full power (1.0)
+
         Example:
             S5i_1 = S5i_module(SPI_Rack_1, 4)
             S5i_2 = S5i_module(SPI_rack_1, 2, frequency=200, output_level=0.3)
@@ -129,6 +132,17 @@ class S5i_module(object):
         else:
             raise ValueError('"stepsize" value {} not allowed. Must be integer division of reference frequency below 1024'.format(stepsize))
 
+    def lock_detect(self):
+        """Returns if there is a lock detected
+
+        Return True if module managed to lock to reference signal, otherwise returns False
+
+        Returns:
+            True/False depending if lock detected (bool)
+        """
+        data = self.spi_rack.read_data(self.module, 4, 0, BICPINS_SPEED, bytearray([0]))
+        return data[0]&0x01
+
     def set_frequency(self, frequency):
         """Sets the frequency
 
@@ -178,13 +192,14 @@ class S5i_module(object):
 
         #Check that band select is smaller than 10 kHz, otherwise divide
         #until it is
-        fpfd = local_ref/R
+        #fpfd = local_ref/R
 
-        band_sel = 1
-        if fpfd > 10e3:
-            band_sel = int(math.ceil(fpfd/10e3))
-        if band_sel > 255:
-            band_sel = 255
+        # band_sel = 1
+        # if fpfd > 10e3:
+        #     band_sel = int(math.ceil(fpfd/10e3))
+        # if band_sel > 255:
+        #     band_sel = 255
+        band_sel = 255
 
         #print("Div: " + str(div))
         #print("prescaler: " + str(prescaler))
@@ -255,12 +270,14 @@ class S5i_module(object):
         self.rf_frequency = actual_frequency
         #Check that band select is smaller than 10 kHz, otherwise divide
         #until it is
-        fpfd = fref/R
-        band_sel = 1
-        if fpfd > 10e3:
-            band_sel = int(math.ceil(fpfd/10e3))
-        if band_sel > 255:
-            band_sel = 255
+        #fpfd = fref/R
+        # band_sel = 1
+        # if fpfd > 10e3:
+        #     band_sel = int(math.ceil(fpfd/10e3))
+        # if band_sel > 255:
+        #     band_sel = 255
+        band_sel = 255
+
         # In REG4: Set calculated divider and band select, enable RF out at max power
         self.registers[4] = (div<<20) | (band_sel<<12) | (self.output_status<<5) | (3<<3) | 4
         # In REG2: Set calculated R value, enable double buffer, LDF=INT-N, LDP=6ns, PD_POL = Positive

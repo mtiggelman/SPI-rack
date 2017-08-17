@@ -1,7 +1,25 @@
+"""DAC module D5a interface
+
+SPI Rack interface code for the D5a module.
+
+Example:
+    Example use: ::
+        D5a = spirack.D5a_module(SPI_Rack1, 2, True)
+
+Attributes:
+    range_4V_uni (int): Constant to set span to 0V to 4V
+    range_4V_bi (int): Constant to set span to -4V to 4V
+    range_2V_bi (int): Constant to set span to -2V to 2V
+
+Todo:
+    *Add checks on writing span and values
+    *Add software support for +-8V mode
+"""
+
 import numpy as np
 
-from .spi_rack import *
-from .chip_mode import *
+from .spi_rack import SPI_rack
+from .chip_mode import LTC2758_MODE, LTC2758_SPEED
 
 class D5a_module(object):
     """D5a module interface class
@@ -11,15 +29,15 @@ class D5a_module(object):
     span of the DAC module can be set via software for each of the 16 DACs
     individually.
 
-    Changing the voltage can happen via change_value_update, which immediately
-    updates the output of the DAC, or via the change_value function. This
-    function writes the new value to the DAC but does not update the output
-    until the update function is ran.
+    Setting the voltage can happen via the set_voltage function. Other ways are
+    the change_value_update function, which immediately updates the output of the
+    DAC, or via the change_value function. This function writes the new value to
+    the DAC but does not update the output until the update function is ran.
 
     Attributes:
-        module: the module number set by the user (must coincide with hardware)
-        span: a list of values of the span for each DAC in the module
-        voltages: a list of DAC voltage settings last written to the DAC
+        module (int): the module number set by the user (must coincide with hardware)
+        span (list(int)): a list of values of the span for each DAC in the module
+        voltages (list(int)): a list of DAC voltage settings last written to the DAC
     """
 
     # DAC software span constants
@@ -35,12 +53,10 @@ class D5a_module(object):
         in the module will be set to +-4V span and set to 0 Volt (midscale).
 
         Args:
-            spi_rack: SPI_rack class object via which the communication runs
-            module: module number set on the hardware
+            spi_rack (SPI_rack object): SPI_rack class object via which the communication runs
+            module (int): module number set on the hardware
             reset_voltages (bool): if True, then reset all voltages to zero and
                                    change the span to `range_4V_bi`
-        Example:
-            D5a_1 = D5a_module(SPI_Rack_1, 4)
         """
         self.spi_rack = spi_rack
         self.module = module
@@ -63,8 +79,8 @@ class D5a_module(object):
         the DAC
 
         Args:
-            DAC: DAC inside the module to change the span of (int: 0-15)
-            span: values for the span as mentioned in the datasheet, use
+            DAC (int: 0-15): DAC inside the module of which to change the span
+            span (constant): values for the span as mentioned in the datasheet, use
                   constants as defined above
         """
         self.span[DAC] = span
@@ -93,8 +109,8 @@ class D5a_module(object):
         update is called.
 
         Args:
-            DAC: DAC inside the module to change the span of (int: 0-15)
-            span: values for the span as mentioned in the datasheet, use
+            DAC (int: 0-15): DAC inside the module of which to change the span
+            span (constant): values for the span as mentioned in the datasheet, use
                   constants as defined above
         """
         self.span[DAC] = span
@@ -124,8 +140,8 @@ class D5a_module(object):
         updates the output.
 
         Args:
-            DAC: DAC inside module to change value of (int: 0-15)
-            value: new DAC value (18-bit unsigned integer)
+            DAC (int: 0-15): DAC inside the module of which to change the value
+            value (18-bit unsigned int): new DAC value
         """
         # Determine which DAC in IC by checking even/uneven
         address = (DAC%2)<<1
@@ -150,8 +166,8 @@ class D5a_module(object):
         update the output until an update is run.
 
         Args:
-            DAC: DAC inside module to change value of (int: 0-15)
-            value: new DAC value (18-bit unsigned integer)
+            DAC (int: 0-15): DAC inside the module of which to change the value
+            value (18-bit unsigned int): new DAC value
         """
         # Determine which DAC in IC by checking even/uneven
         address = (DAC%2)<<1
@@ -176,7 +192,7 @@ class D5a_module(object):
         change_value or change_span when wanting to update the DAC.
 
         Args:
-            DAC: DAC inside module to change value of (int: 0-15)
+            DAC (int: 0-15): DAC inside the module of which to update
         """
         # Determine which DAC in IC by checking even/uneven
         address = (DAC%2)<<1
@@ -204,8 +220,8 @@ class D5a_module(object):
         is used. The calculated value is floored, not rounded.
 
         Args:
-            DAC: DAC inside module to update voltage of (int: 0-15)
-            voltage: new DAC voltage (float)
+            DAC (int: 0-15): DAC inside the module of which to update the voltage
+            voltage (float): new DAC voltage
         """
         step = self.get_stepsize(DAC)
 
@@ -245,7 +261,7 @@ class D5a_module(object):
         steps might not behave as expected.
 
         Args:
-            DAC: DAC of which the step size is calculated (int: 0-15)
+            DAC (int: 0-15): DAC inside the module of which the stepsize is calculated
         Returns:
             Smallest voltage step possible with DAC (float)
         """
@@ -263,7 +279,7 @@ class D5a_module(object):
         and the span. Calculates the voltage set with the read out span.
 
         Args:
-            DAC: DAC of which settings will be read (int: 0-15)
+            DAC (int: 0-15): DAC inside the module of which the settings will be read
         Returns:
             List with voltage and span: [voltages, span] (int)
         """
@@ -293,6 +309,6 @@ class D5a_module(object):
         elif span == D5a_module.range_2V_bi:
             voltage = (code*4.0/(2**18)) - 2.0
         else:
-            raise ValueError("Span {} should not be used. Accepted values are: {}".format(span, [0,2,4]))
+            raise ValueError("Span {} should not be used. Accepted values are: {}".format(span, [0, 2, 4]))
 
         return [voltage, span]
