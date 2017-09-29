@@ -14,6 +14,7 @@ AD9106_MODE = 0
 # Other
 ADF4351_MODE = 0  # Frequency synthesizer
 LMK01010_MODE = 0 # Clock distribution/division/delay
+BICPINS_MODE = 0
 
 # SPI clock = MCK/SCBR = 84Mc/SCBR (range 14..255)
 LTC2758_SPEED =  6   # 14Mc (40Mc later)

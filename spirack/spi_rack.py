@@ -18,7 +18,7 @@ class SPI_rack(serial.Serial):
         refFrequency: the current reference frequency (in Hz)
     """
 
-    def __init__(self, port, baud, timeout, ref_frequency=10e6):
+    def __init__(self, port, baud, timeout):
         """Inits SPI_rack class
 
         Args:
@@ -44,7 +44,7 @@ class SPI_rack(serial.Serial):
         self.active_module = None
         self.active_chip = None
         self.active_speed  = None
-        self.ref_frequency = ref_frequency
+        self.ref_frequency = None
 
     def set_ref_frequency(self, frequency):
         """Set the reference frequency present on the backplane (Hz)

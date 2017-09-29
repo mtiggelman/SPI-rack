@@ -1,4 +1,4 @@
-from .spi_rack import *
+from .spi_rack import SPI_rack
 from .chip_mode import *
 
 class F1d_module(object):

@@ -1,5 +1,5 @@
-from spi_rack import *
-from chip_mode import *
+from .spi_rack import SPI_rack
+from .chip_mode import *
 
 class M2j_module(object):
 

@@ -12,7 +12,6 @@ Attributes:
     range_2V_bi (int): Constant to set span to -2V to 2V
 
 Todo:
-    *Add checks on writing span and values
     *Add software support for +-8V mode
 """
 

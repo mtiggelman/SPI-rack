@@ -7,3 +7,4 @@ from .D5a_module import D5a_module
 from .F1d_module import F1d_module
 from .S5i_module import S5i_module
 from .S4g_module import S4g_module
+from .S5k_module import S5k_module
