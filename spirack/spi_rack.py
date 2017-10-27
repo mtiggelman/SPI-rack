@@ -1,7 +1,16 @@
 import serial
 from .chip_mode import *
 from sys import version_info
+import threading
 
+class NoLock(object):
+    """ Dummy lock object """
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
+    
 class SPI_rack(serial.Serial):
     """SPI rack interface class
 
@@ -18,7 +27,7 @@ class SPI_rack(serial.Serial):
         refFrequency: the current reference frequency (in Hz)
     """
 
-    def __init__(self, port, baud, timeout):
+    def __init__(self, port, baud, timeout, use_locks = True):
         """Inits SPI_rack class
 
         Args:
@@ -45,6 +54,11 @@ class SPI_rack(serial.Serial):
         self.active_chip = None
         self.active_speed  = None
         self.ref_frequency = None
+        
+        if use_locks:
+            self.lock = threading.Lock()
+        else:
+            self.lock = NoLock()
 
     def set_ref_frequency(self, frequency):
         """Set the reference frequency present on the backplane (Hz)
@@ -114,8 +128,9 @@ class SPI_rack(serial.Serial):
 
         read_length = len(data)
         data = bytearray([ord('r')]) + data
-        self.write(data)
-        r_data = self.read(read_length)
+        with self.lock:
+            self.write(data)
+            r_data = self.read(read_length)
 
         if len(r_data) < read_length:
             print("Received less bytes than expected")
