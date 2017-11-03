@@ -72,7 +72,7 @@ class SPI_rack(serial.Serial):
         """
         self.ref_frequency = frequency
 
-    def set_active(self, module, chip, SPI_mode, SPI_speed):
+    def _set_active(self, module, chip, SPI_mode, SPI_speed):
         """Set the current module/chip to active on controller unit
 
         By writing 'c' and then chip/module combination, this chip will
@@ -106,7 +106,7 @@ class SPI_rack(serial.Serial):
 
         with self.lock:
             if (self.active_module != module or self.active_chip != chip or self.active_speed != SPI_speed):
-                self.set_active(module, chip, SPI_mode, SPI_speed)
+                self._set_active(module, chip, SPI_mode, SPI_speed)
     
             s_data = bytearray([ord('w')]) + data
     
@@ -126,7 +126,7 @@ class SPI_rack(serial.Serial):
         """
         with self.lock:
             if self.active_module != module or self.active_chip != chip:
-                self.set_active(module, chip, SPI_mode, SPI_speed)
+                self._set_active(module, chip, SPI_mode, SPI_speed)
     
             read_length = len(data)
             data = bytearray([ord('r')]) + data
