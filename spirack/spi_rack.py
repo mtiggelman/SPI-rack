@@ -104,12 +104,13 @@ class SPI_rack(serial.Serial):
             data     : array of data to be send (bytearray)
         """
 
-        if (self.active_module != module or self.active_chip != chip or self.active_speed != SPI_speed):
-            self.set_active(module, chip, SPI_mode, SPI_speed)
-
-        s_data = bytearray([ord('w')]) + data
-
-        self.write(s_data)
+        with self.lock:
+            if (self.active_module != module or self.active_chip != chip or self.active_speed != SPI_speed):
+                self.set_active(module, chip, SPI_mode, SPI_speed)
+    
+            s_data = bytearray([ord('w')]) + data
+    
+            self.write(s_data)
 
     def read_data(self, module, chip, SPI_mode, SPI_speed, data):
         """Read data from selected module/chip combination
@@ -123,12 +124,12 @@ class SPI_rack(serial.Serial):
         Returns:
             Bytes received from module/chip (int list)
         """
-        if self.active_module != module or self.active_chip != chip:
-            self.set_active(module, chip, SPI_mode, SPI_speed)
-
-        read_length = len(data)
-        data = bytearray([ord('r')]) + data
         with self.lock:
+            if self.active_module != module or self.active_chip != chip:
+                self.set_active(module, chip, SPI_mode, SPI_speed)
+    
+            read_length = len(data)
+            data = bytearray([ord('r')]) + data
             self.write(data)
             r_data = self.read(read_length)
 
@@ -148,10 +149,11 @@ class SPI_rack(serial.Serial):
         Returns:
             Voltages (float): [VbatPlus, VbatMin]
         """
-        self.read_adc(1)
-        Vbatplus = 2.171*3.3*self.read_adc(1)/4096.0
-        self.read_adc(0)
-        Vbatmin = -2.148*3.3*self.read_adc(0)/4096.0
+        with self.lock:
+            self.read_adc(1)
+            Vbatplus = 2.171*3.3*self.read_adc(1)/4096.0
+            self.read_adc(0)
+            Vbatmin = -2.148*3.3*self.read_adc(0)/4096.0
         return [Vbatplus, Vbatmin]
 
     def read_adc(self, channel):
