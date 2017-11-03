@@ -71,10 +71,10 @@ class D5a_module(object):
             for i in range(16):
                 if np.abs(self.voltages[i])>1e-3:
                     # we need to ramp to zero first
-                    print('D5a_module: ramping dac %d to zero' % i)
+                    print('D5a_module: ramping dac %d from %.3f V to zero' % (i, self.voltages[i]) )
                     ramp_step = 10e-3
                     ramp_delay = 10e-3
-                    steps = np.arange(0, self.voltages[i], np.sign(self.voltages[i])*ramp_step)
+                    steps = np.arange(0, self.voltages[i], np.sign(self.voltages[i])*ramp_step)[::-1]
                     
                     for v in steps:
                         self.set_voltage(i, v)
