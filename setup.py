@@ -20,11 +20,13 @@ def get_version(verbose=0):
         print('get_version_info: %s' % FULLVERSION)
     return FULLVERSION
 
+version = get_version()
+
 setup(name='spirack',
-      version='0.1.0.dev8',
+      version=version,
       description='Drivers for the QuTech SPI-rack',
       url='https://github.com/Rubenknex/SPI-rack',
-      download_url='https://github.com/Rubenknex/SPI-rack/archive/0.1.0.dev6.tar.gz',
+      download_url='https://github.com/Rubenknex/SPI-rack/archive/%s.tar.gz' % version,
       author='Marijn Tiggelman',
       author_email='qutechdev@gmail.com',
       license='MIT',
