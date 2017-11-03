@@ -187,9 +187,9 @@ class SPI_rack(serial.Serial):
         Returns:
             none
         """
-
-        s_data = bytearray([ord('u')])
-        self.write(s_data)
+        with self.lock():
+            s_data = bytearray([ord('u')])
+            self.write(s_data)
 
 
     def lock(self):
@@ -203,5 +203,6 @@ class SPI_rack(serial.Serial):
             none
         """
 
-        s_data = bytearray([ord('l')])
-        self.write(s_data)
+        with self.lock():
+            s_data = bytearray([ord('l')])
+            self.write(s_data)
