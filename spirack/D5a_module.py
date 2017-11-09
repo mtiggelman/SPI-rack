@@ -15,6 +15,7 @@ Todo:
     *Add software support for +-8V mode
 """
 
+import time
 import numpy as np
 
 from .spi_rack import SPI_rack
@@ -55,7 +56,8 @@ class D5a_module(object):
             spi_rack (SPI_rack object): SPI_rack class object via which the communication runs
             module (int): module number set on the hardware
             reset_voltages (bool): if True, then reset all voltages to zero and
-                                   change the span to `range_4V_bi`
+                                   change the span to `range_4V_bi`. If a voltage
+                                   jump would occur, then ramp to zero in steps of 10 mV
         """
         self.spi_rack = spi_rack
         self.module = module
@@ -67,8 +69,19 @@ class D5a_module(object):
 
         if reset_voltages:
             for i in range(16):
-            # Set all DACs to +-4V and midscale (0V)
-                self.change_span(i, D5a_module.range_4V_bi)
+                if np.abs(self.voltages[i])>1e-3:
+                    # we need to ramp to zero first
+                    print('D5a_module: ramping dac %d from %.3f V to zero' % (i, self.voltages[i]) )
+                    ramp_step = 10e-3
+                    ramp_delay = 10e-3
+                    steps = np.arange(0, self.voltages[i], np.sign(self.voltages[i])*ramp_step)[::-1]
+                    
+                    for v in steps:
+                        self.set_voltage(i, v)
+                        time.sleep(ramp_delay)
+
+                # Set all DACs to +-4V and midscale (0V)
+                self.change_span(i, D5a_module.range_4V_bi)                
                 self.set_voltage(i, 0.0)
 
     def change_span_update(self, DAC, span):
@@ -77,6 +90,8 @@ class D5a_module(object):
         Changes the span of the DAC and immediately updates the output of
         the DAC
 
+        Note: changing the span is not thread safe!
+        
         Args:
             DAC (int: 0-15): DAC inside the module of which to change the span
             span (constant): values for the span as mentioned in the datasheet, use
@@ -106,6 +121,8 @@ class D5a_module(object):
 
         Changes the span of the DAC, but doesn't update the output value until
         update is called.
+
+        Note: changing the span is not thread safe!
 
         Args:
             DAC (int: 0-15): DAC inside the module of which to change the span
