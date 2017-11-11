@@ -203,6 +203,6 @@ class SPI_rack(serial.Serial):
             none
         """
 
-        with self.lock():
+        with self.lock:
             s_data = bytearray([ord('l')])
             self.write(s_data)
