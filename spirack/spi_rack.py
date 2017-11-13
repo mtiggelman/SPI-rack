@@ -56,9 +56,10 @@ class SPI_rack(serial.Serial):
         self.ref_frequency = None
         
         if use_locks:
-            self.lock = threading.Lock()
+            # create a lock for threading
+            self._tlock = threading.Lock()
         else:
-            self.lock = NoLock()
+            self._tlock = NoLock()
 
     def set_ref_frequency(self, frequency):
         """Set the reference frequency present on the backplane (Hz)
@@ -104,7 +105,7 @@ class SPI_rack(serial.Serial):
             data     : array of data to be send (bytearray)
         """
 
-        with self.lock:
+        with self._tlock:
             if (self.active_module != module or self.active_chip != chip or self.active_speed != SPI_speed):
                 self._set_active(module, chip, SPI_mode, SPI_speed)
     
@@ -124,7 +125,7 @@ class SPI_rack(serial.Serial):
         Returns:
             Bytes received from module/chip (int list)
         """
-        with self.lock:
+        with self._tlock:
             if self.active_module != module or self.active_chip != chip:
                 self._set_active(module, chip, SPI_mode, SPI_speed)
     
@@ -149,7 +150,7 @@ class SPI_rack(serial.Serial):
         Returns:
             Voltages (float): [VbatPlus, VbatMin]
         """
-        with self.lock:
+        with self._tlock:
             self.read_adc(1)
             Vbatplus = 2.171*3.3*self.read_adc(1)/4096.0
             self.read_adc(0)
@@ -187,7 +188,7 @@ class SPI_rack(serial.Serial):
         Returns:
             none
         """
-        with self.lock():
+        with self._tlock:
             s_data = bytearray([ord('u')])
             self.write(s_data)
 
@@ -203,6 +204,6 @@ class SPI_rack(serial.Serial):
             none
         """
 
-        with self.lock():
+        with self._tlock:
             s_data = bytearray([ord('l')])
             self.write(s_data)
