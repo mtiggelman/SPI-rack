@@ -358,6 +358,23 @@ class S5k_module(object):
         self.reference = source
         self.write_LMK_data(14, (1<<30) | (possible_values[source]<<29) |(1<<27))
 
+    def set_clock_division(self, divisor):
+        allowed_values = [1] + list(range(2,512,2))
+        if divisor not in allowed_values:
+            raise ValueError('Allowed values are: 1, 2, 4, 6, 8, ..., 510')
+
+        if divisor == 1:
+            data = 1<<16 | 0<<17 | 0<<8
+        else:
+            data = 1<<16 | 1<<17 | int((divisor/2))<<8
+
+        self.write_LMK_data(0, data)
+        self.write_LMK_data(1, data)
+        self.write_LMK_data(6, data)
+        self.write_LMK_data(7, data)
+
+        self.set_clock_source(self.reference)
+
     def write_LMK_data(self, register, data):
         b1 = (data>>24) & 0xFF
         b2 = (data>>16) & 0xFF
