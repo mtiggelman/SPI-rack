@@ -18,6 +18,7 @@ BICPINS_MODE = 0
 
 # SPI clock = MCK/SCBR = 84Mc/SCBR (range 14..255)
 LTC2758_SPEED =  6   # 14Mc (40Mc later)
+LTC2758_RD_SPEED = 8 # 10.5Mc
 AD9106_SPEED  =  6   # 14Mc (Can go higher)
 MAX5702_SPEED =  6   # 14Mc
 MAX521x_SPEED =  6   # 14Mc

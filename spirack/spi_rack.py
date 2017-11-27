@@ -10,7 +10,7 @@ class NoLock(object):
 
     def __exit__(self, exc_type, exc_value, traceback):
         pass
-    
+
 class SPI_rack(serial.Serial):
     """SPI rack interface class
 
@@ -54,7 +54,7 @@ class SPI_rack(serial.Serial):
         self.active_chip = None
         self.active_speed  = None
         self.ref_frequency = None
-        
+
         if use_locks:
             # create a lock for threading
             self._tlock = threading.Lock()
@@ -108,9 +108,9 @@ class SPI_rack(serial.Serial):
         with self._tlock:
             if (self.active_module != module or self.active_chip != chip or self.active_speed != SPI_speed):
                 self._set_active(module, chip, SPI_mode, SPI_speed)
-    
+
             s_data = bytearray([ord('w')]) + data
-    
+
             self.write(s_data)
 
     def read_data(self, module, chip, SPI_mode, SPI_speed, data):
@@ -126,9 +126,9 @@ class SPI_rack(serial.Serial):
             Bytes received from module/chip (int list)
         """
         with self._tlock:
-            if self.active_module != module or self.active_chip != chip:
+            if self.active_module != module or self.active_chip != chip or self.active_speed != SPI_speed:
                 self._set_active(module, chip, SPI_mode, SPI_speed)
-    
+
             read_length = len(data)
             data = bytearray([ord('r')]) + data
             self.write(data)

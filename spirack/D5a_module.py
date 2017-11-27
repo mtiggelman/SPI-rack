@@ -19,7 +19,7 @@ import time
 import numpy as np
 
 from .spi_rack import SPI_rack
-from .chip_mode import LTC2758_MODE, LTC2758_SPEED
+from .chip_mode import LTC2758_MODE, LTC2758_SPEED, LTC2758_RD_SPEED
 
 class D5a_module(object):
     """D5a module interface class
@@ -75,13 +75,13 @@ class D5a_module(object):
                     ramp_step = 10e-3
                     ramp_delay = 10e-3
                     steps = np.arange(0, self.voltages[i], np.sign(self.voltages[i])*ramp_step)[::-1]
-                    
+
                     for v in steps:
                         self.set_voltage(i, v)
                         time.sleep(ramp_delay)
 
                 # Set all DACs to +-4V and midscale (0V)
-                self.change_span(i, D5a_module.range_4V_bi)                
+                self.change_span(i, D5a_module.range_4V_bi)
                 self.set_voltage(i, 0.0)
 
     def change_span_update(self, DAC, span):
@@ -91,7 +91,7 @@ class D5a_module(object):
         the DAC
 
         Note: changing the span is not thread safe!
-        
+
         Args:
             DAC (int: 0-15): DAC inside the module of which to change the span
             span (constant): values for the span as mentioned in the datasheet, use
@@ -308,14 +308,14 @@ class D5a_module(object):
         command = 0b1101
         data = bytearray([(command<<4) | address, 0, 0, 0])
 
-        code_data = self.spi_rack.read_data(self.module, DAC_ic, LTC2758_MODE, LTC2758_SPEED, data)
+        code_data = self.spi_rack.read_data(self.module, DAC_ic, LTC2758_MODE, LTC2758_RD_SPEED, data)
         code = (code_data[1]<<10) | (code_data[2]<<2) | (code_data[3]>>6)
 
         # Read span command
         command = 0b1100
         data = bytearray([(command<<4) | address, 0, 0, 0])
 
-        span_data = self.spi_rack.read_data(self.module, DAC_ic, LTC2758_MODE, LTC2758_SPEED, data)
+        span_data = self.spi_rack.read_data(self.module, DAC_ic, LTC2758_MODE, LTC2758_RD_SPEED, data)
         span = span_data[2]
 
         if span == D5a_module.range_4V_uni:
