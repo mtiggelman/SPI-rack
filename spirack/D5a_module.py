@@ -45,7 +45,7 @@ class D5a_module(object):
     range_4V_bi = 2
     range_2V_bi = 4
 
-    def __init__(self, spi_rack, module, reset_voltages=True):
+    def __init__(self, spi_rack, module, reset_voltages=True, num_dacs=16):
         """Inits D5a module class
 
         The D5a_module class needs an SPI_rack object at initiation. All
@@ -58,17 +58,19 @@ class D5a_module(object):
             reset_voltages (bool): if True, then reset all voltages to zero and
                                    change the span to `range_4V_bi`. If a voltage
                                    jump would occur, then ramp to zero in steps of 10 mV
+            num_dacs (int): number of DAC channels available
         """
         self.spi_rack = spi_rack
         self.module = module
-        self.span = [np.NaN]*16
-        self.voltages = [np.NaN]*16
+        self._num_dacs = num_dacs
+        self.span = [np.NaN]*self._num_dacs
+        self.voltages = [np.NaN]*self._num_dacs
 
-        for i in range(16):
+        for i in range(self._num_dacs):
             self.voltages[i], self.span[i] = self.get_settings(i)
 
         if reset_voltages:
-            for i in range(16):
+            for i in range(self._num_dacs):
                 if np.abs(self.voltages[i])>1e-3:
                     # we need to ramp to zero first
                     print('D5a_module: ramping dac %d from %.3f V to zero' % (i, self.voltages[i]) )
