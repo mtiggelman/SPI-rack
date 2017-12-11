@@ -150,11 +150,8 @@ class SPI_rack(serial.Serial):
         Returns:
             Voltages (float): [VbatPlus, VbatMin]
         """
-        with self._tlock:
-            self.read_adc(1)
-            Vbatplus = 2.171*3.3*self.read_adc(1)/4096.0
-            self.read_adc(0)
-            Vbatmin = -2.148*3.3*self.read_adc(0)/4096.0
+        Vbatplus = 2.171*3.3*self.read_adc(1)/4096.0
+        Vbatmin = -2.148*3.3*self.read_adc(0)/4096.0
         return [Vbatplus, Vbatmin]
 
     def read_adc(self, channel):
