@@ -9,6 +9,8 @@ Example:
 Attributes:
     range_4V_uni (int): Constant to set span to 0V to 4V
     range_4V_bi (int): Constant to set span to -4V to 4V
+    range_8V_uni (int): Constant to set span to 0V to 8V
+    range_8V_bi (int): Constant to set span to -8V to 4V
     range_2V_bi (int): Constant to set span to -2V to 2V
 
 Todo:
@@ -43,6 +45,8 @@ class D5a_module(object):
     # DAC software span constants
     range_4V_uni = 0
     range_4V_bi = 2
+    range_8V_uni = 1
+    range_8V_bi = 3
     range_2V_bi = 4
 
     def __init__(self, spi_rack, module, reset_voltages=True, num_dacs=16):
@@ -253,6 +257,16 @@ class D5a_module(object):
             self.voltages[DAC] = (bit_value * step) - 4.0
             maxV = 4.0
             minV = -4.0
+        if self.span[DAC] == D5a_module.range_8V_uni:
+            bit_value = int(voltage / step)
+            self.voltages[DAC] = bit_value * step
+            maxV = 8.0
+            minV = 0.0
+        elif self.span[DAC] == D5a_module.range_8V_bi:
+            bit_value = int((voltage + 8.0) / step)
+            self.voltages[DAC] = (bit_value * step) - 8.0
+            maxV = 8.0
+            minV = -8.0
         elif self.span[DAC] == D5a_module.range_2V_bi:
             bit_value = int((voltage + 2.0) / step)
             self.voltages[DAC] = (bit_value * step) - 2.0
@@ -287,8 +301,10 @@ class D5a_module(object):
         """
         if self.span[DAC] == D5a_module.range_4V_uni:
             return 4.0/(2**18)
-        if self.span[DAC] == D5a_module.range_4V_bi:
+        if self.span[DAC] == D5a_module.range_4V_bi or D5a_module.range_8V_uni:
             return 8.0/(2**18)
+        if self.span[DAC] == D5a_module.range_8V_bi:
+            return 16.0/(2**18)
         if self.span[DAC] == D5a_module.range_2V_bi:
             return 4.0/(2**18)
 
@@ -326,9 +342,13 @@ class D5a_module(object):
             voltage = (code*4.0/(2**18))
         elif span == D5a_module.range_4V_bi:
             voltage = (code*8.0/(2**18)) - 4.0
+        elif span == D5a_module.range_8V_uni:
+            voltage = (code*8.0/(2**18))
+        elif span == D5a_module.range_8V_bi:
+            voltage = (code*16.0/(2**18)) - 8.0
         elif span == D5a_module.range_2V_bi:
             voltage = (code*4.0/(2**18)) - 2.0
         else:
-            raise ValueError("Span {} should not be used. Accepted values are: {}".format(span, [0, 2, 4]))
+            raise ValueError("Span {} should not be used. Accepted values are: {}".format(span, [0, 1, 2, 3, 4]))
 
         return [voltage, span]
