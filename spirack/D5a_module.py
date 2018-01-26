@@ -301,7 +301,7 @@ class D5a_module(object):
         """
         if self.span[DAC] == D5a_module.range_4V_uni:
             return 4.0/(2**18)
-        if self.span[DAC] == D5a_module.range_4V_bi or D5a_module.range_8V_uni:
+        if self.span[DAC] == (D5a_module.range_4V_bi or D5a_module.range_8V_uni):
             return 8.0/(2**18)
         if self.span[DAC] == D5a_module.range_8V_bi:
             return 16.0/(2**18)
