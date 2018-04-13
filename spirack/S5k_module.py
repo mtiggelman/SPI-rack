@@ -6,8 +6,6 @@ Example use : ::
     S5k = S5k_module(SPI_rack1, 3)
 
 Todo:
-    *Add clock division per IC
-    *Add function to set pattern length
     *Add readback from DAC ICs
 """
 
@@ -31,13 +29,15 @@ class S5k_module(object):
         DAC_DC_val (list(int)): list containing the DC values per DAC
         DAC_dgain (list(int)): list containing the (digital) gain settings per DAC
         DAC_doffset (list(int)): list containing the (digital) offsets per DAC
+        DAC_clock_div (list(int)): list containing the clock division per DAC (IC)
         module_running (bool): True or False if the module is running
     """
 
-    #Maps the DACs, as numbered at module front plate, to the DAC IC and internal DAC
-    #So DAC 1 maps to DAC IC with SPI addres 2 and internal DAC 4
-    DAC_mapping = {1:[2,4], 2:[2,3], 3:[2,1], 4:[2,2], 5:[0,4], 6:[0,3], 7:[0,1], 8:[0,2],
-                   9:[3,4], 10:[3,3], 11:[3,1], 12:[3,2], 13:[1,4], 14:[1,3], 15:[1,1], 16:[1,2]}
+    #Maps the DACs, as numbered at module front plate, to the DAC IC SPI address
+    #and internal DAC
+    #So DAC 1 maps to DAC IC with SPI addres 3 and internal DAC 4
+    DAC_mapping = {1:[3,4], 2:[3,3], 3:[3,1], 4:[3,2], 5:[1,4], 6:[1,3], 7:[1,1], 8:[1,2],
+                   9:[4,4], 10:[4,3], 11:[4,1], 12:[4,2], 13:[0,4], 14:[0,3], 15:[0,1], 16:[0,2]}
 
     def __init__(self, spi_rack, module):
         """Inits S5k module class
@@ -53,21 +53,22 @@ class S5k_module(object):
         self.spi_rack = spi_rack
         self.module = module
 
-        self.reference = None
         self.write_LMK_data(0, (1<<31)) #Reset clock distribution
         self.write_LMK_data(0, 1<<16 | 0<<17 | 0b0<<8) #Enable channel 0, undivided
         self.write_LMK_data(1, 1<<16 | 0<<17 | 0b0<<8) #Enable channel 1, undivided
         self.write_LMK_data(6, 1<<16 | 0<<17 | 0b0<<8) #Enable channel 6, undivided
         self.write_LMK_data(7, 1<<16 | 0<<17 | 0b0<<8) #Enable channel 7, undivided
-        self.set_clock_source('internal')
 
         self.DAreg = AD9106_registers #DAreg contains all AD9106 register addresses
         self.DAC_waveform_mode = 16*[None]
         self.DAC_DC_val = 16*[None]
         self.DAC_dgain = 16*[None]
         self.DAC_doffset = 16*[None]
+        self.DAC_clock_div = 16*[1]
 
-        self.module_running = None
+        self.module_running = False
+        self.reference = None
+        self.set_clock_source('internal')
         self.run_module(False)
 
     def set_waveform_mode(self, DAC, waveform):
@@ -232,6 +233,14 @@ class S5k_module(object):
         self.write_AD9106(register, data, DAC_IC)
 
     def set_digital_offset(self, DAC, offset):
+        """Set the digital offset
+
+        Sets the digital offset of the DAC.
+
+        Args:
+            DAC (int: 1-16): DAC of which DC value to change
+            offset (float): value between -2.85 and 2.85
+        """
         #12 bit offset
         Vmax = 2.857
         Vmin = -2.875
@@ -263,14 +272,36 @@ class S5k_module(object):
         self.write_AD9106(register, data, DAC_IC)
 
     def run_module(self, run):
+        """Starts the module
+
+        Set all DAC outputs to run and start outputting a trigger. Can also
+        be done by an external trigger in on the front of the module.
+
+        Args:
+            run (bool): Set module running True or False
+        """
         self.module_running = run
 
-        for i in range(4):
+        for i in [0, 1, 3, 4]:
             self.write_AD9106(self.DAreg.PAT_STATUS, run, i)
 
-        self.spi_rack.write_data(self.module, 5, BICPINS_MODE, BICPINS_SPEED, bytearray([(not run)<<1]))
+        # Check to see if internal oscillator needs to be disabled
+        if self.reference == 'internal':
+            reference = 1
+        else:
+            reference = 0
+
+        self.spi_rack.write_data(self.module, 5, BICPINS_MODE, BICPINS_SPEED, bytearray([reference | 2 | (run<<7)]))
 
     def upload_waveform(self, DAC, waveform, start_addr, set_pattern_length=True):
+        """Upload waveform to selected DAC
+
+        Args:
+            DAC (int: 1-16): DAC which to upload to
+            waveform (int array): integer array containing values between -2048 and 2047
+            start_addr (int): location of first address to upload to
+            set_pattern_length (bool): set the pattern length of the DAC to the uploaded waveform length
+        """
         if len(waveform) + start_addr > 4096:
             raise ValueError('Waveform length + starting address exceeds RAM size! Max 4096.')
 
@@ -316,9 +347,19 @@ class S5k_module(object):
         self.write_AD9106(self.DAreg.PAT_STATUS, 0, DAC_IC)
 
         if set_pattern_length is True:
-            self.set_pattern_length(DAC, len(waveform))
+            self.set_pattern_length_DAC(DAC, len(waveform))
 
     def set_RAM_address(self, DAC, start_pos, stop_pos):
+        """Set addresses for AWG mode
+
+        Sets the start and stop address for the selected DAC in AWG mode. When the
+        DAC is running it will output data from this address range.
+
+        Args:
+            DAC (int: 1-16): DAC of which to set the addresses
+            start_pos (int): start address of waveform
+            stop_pos (int): stop address of waveform
+        """
         #start and stop both 12 bit
         if stop_pos > 4096:
             raise ValueError('Stop address {} is larger than max value 4096!'.format(stop_pos))
@@ -346,9 +387,19 @@ class S5k_module(object):
         data = stop_pos << 4
         self.write_AD9106(stop_register, data, DAC_IC)
 
-    def set_pattern_length(self, DAC, length):
+    def set_pattern_length_DAC(self, DAC, length):
         DAC_IC = S5k_module.DAC_mapping[DAC][0]
         self.write_AD9106(self.DAreg.PAT_PERIOD, length, DAC_IC)
+
+    def set_pattern_length_trigger(self, length):
+        if length not in range(10, 4095):
+            raise ValueError('Value {} not allowed. Needs to be between 10 and 4095'.format(length))
+
+        b1 = (length>>8) & 0xFF
+        b2 = length & 0xFF
+        s_data = bytearray([b1, b2])
+
+        self.spi_rack.write_data(self.module, 7, BICPINS_MODE, BICPINS_SPEED, s_data)
 
     def set_clock_source(self, source):
         possible_values = {'internal':0, 'external':1}
@@ -357,9 +408,26 @@ class S5k_module(object):
 
         self.reference = source
         self.write_LMK_data(14, (1<<30) | (possible_values[source]<<29) |(1<<27))
+        self.sync_clock()
 
-    def set_clock_division(self, divisor):
-        allowed_values = [1] + list(range(2,512,2))
+    def sync_clock(self):
+        # Check to see if internal oscillator needs to be disabled
+        if self.reference == 'internal':
+            reference = 1
+        else:
+            reference = 0
+
+        # Toggles the sync pin on the clock distribution/divider IC to sync
+        # up all the clocks. Necessary after any clock change
+        self.spi_rack.write_data(self.module, 5, BICPINS_MODE, BICPINS_SPEED,
+                                 bytearray([reference | 2 | (self.module_running<<7)]))
+        self.spi_rack.write_data(self.module, 5, BICPINS_MODE, BICPINS_SPEED,
+                                 bytearray([reference | 0 | (self.module_running<<7)]))
+        self.spi_rack.write_data(self.module, 5, BICPINS_MODE, BICPINS_SPEED,
+                                 bytearray([reference | 2 | (self.module_running<<7)]))
+
+    def set_clock_division(self, DAC, divisor):
+        allowed_values = [1] + list(range(2, 512, 2))
         if divisor not in allowed_values:
             raise ValueError('Allowed values are: 1, 2, 4, 6, 8, ..., 510')
 
@@ -368,12 +436,27 @@ class S5k_module(object):
         else:
             data = 1<<16 | 1<<17 | int((divisor/2))<<8
 
-        self.write_LMK_data(0, data)
-        self.write_LMK_data(1, data)
-        self.write_LMK_data(6, data)
-        self.write_LMK_data(7, data)
+        DAC_IC = S5k_module.DAC_mapping[DAC][0]
+        # Connect each DAC_IC (SPI address) to the correct LMK register
+        LMK_reg = {0:6, 1:7, 3:0, 4:1}
+        self.write_LMK_data(LMK_reg[DAC_IC], data)
 
-        self.set_clock_source(self.reference)
+        # Update the values in the DAC_clock_div array for all affected DACs
+        for i in range(0, 16, 4):
+            if DAC-1 in range(i, i+4):
+                self.DAC_clock_div[i:i+4] = 4*[divisor]
+
+        # Update the clock to the BIC to be the slowest used clock at the moment
+        # This is the clock with the largest divider
+        max_divisor = max(self.DAC_clock_div)
+        if max_divisor == 1:
+            data = 1<<16 | 0<<17 | 0<<8
+        else:
+            data = 1<<16 | 1<<17 | int((max_divisor/2))<<8
+        self.write_LMK_data(4, data)
+
+        # Synchronise all the clocks
+        self.sync_clock()
 
     def write_LMK_data(self, register, data):
         b1 = (data>>24) & 0xFF
@@ -382,7 +465,7 @@ class S5k_module(object):
         b4 = (data&0xFF) | (register & 0xF)
 
         s_data = bytearray([b1, b2, b3, b4])
-        self.spi_rack.write_data(self.module, 4, LMK01010_MODE, LMK01010_SPEED, s_data)
+        self.spi_rack.write_data(self.module, 2, LMK01010_MODE, LMK01010_SPEED, s_data)
 
     def write_AD9106(self, register, data, SPI_addr):
         b1 = (register>>8) & 0xFF
