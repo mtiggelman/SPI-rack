@@ -1,5 +1,5 @@
 from .spi_rack import SPI_rack
-from .chip_mode import *
+from .chip_mode import MAX5702_MODE, MAX5702_SPEED, MCP320x_MODE
 
 class M2j_module(object):
 
@@ -31,7 +31,7 @@ class M2j_module(object):
     def rf_clipped(self):
         # SPI adress 6 for reading
         # Return True if clipped, False if not clipped
-        inputs = spi_rack.read_data(2, 6, 0, bytearray([0x00]))
+        inputs = self.spi_rack.read_data(2, 6, 0, bytearray([0x00]))
         inputs = int.from_bytes(inputs, byteorder='big')
         inputs = (inputs>>3)&0x01
         return bool(inputs)

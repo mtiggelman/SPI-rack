@@ -35,7 +35,7 @@ class F1d_module(object):
         # Give the spi_rack object to use
         self.spi_rack = spi_rack
         # Byte containing Filter, Gain and RF Clip settings
-        self.remote_settings = 0
+        self.remote_settings = 0x40
         self.clear_rf_clip()
 
     def read_adc(self, channel):
@@ -163,7 +163,7 @@ class F1d_module(object):
     def get_RF_level(self):
         """Get RF input power
 
-        Calculates the RF input power from the ADC value. Within 1 dB accurate
+        Calculates the RF input power from the ADC value. Within 4 dB accurate
         upto 4 dBm. Above will deviate more, but that is also above the clipping level.
 
         Returns:
@@ -178,7 +178,7 @@ class F1d_module(object):
     def get_LO_level(self):
         """ Get LO input power
 
-        Calculates the RF input power from the ADC value. Within 1 dB accurate
+        Calculates the RF input power from the ADC value. Within 4 dB accurate
         upto 4 dBm. Above will deviate more, but that is also above the clipping level.
 
         Returns:
