@@ -1,5 +1,5 @@
 from .spi_rack import SPI_rack
-from .chip_mode import MAX5702_MODE, MAX5702_SPEED, MCP320x_MODE, BICPINS_SPEED
+from .chip_mode import MAX5702_MODE, MAX5702_SPEED, MCP320x_MODE, MCP320x_SPEED, BICPINS_SPEED
 
 class M2j_module(object):
     """M2j module interface class
@@ -46,7 +46,7 @@ class M2j_module(object):
 
     def get_level(self):
         s_data = bytearray([0, 0])
-        r_data = self.spi_rack.read_data(self.module, 1, MCP320x_MODE, MAX5702_SPEED, s_data)
+        r_data = self.spi_rack.read_data(self.module, 1, MCP320x_MODE, MCP320x_SPEED, s_data)
         return (r_data[0]&0x0F)<<8 | r_data[1]
 
     def set_gain(self, level):
