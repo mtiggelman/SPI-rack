@@ -15,6 +15,7 @@ AD9106_MODE = 0
 ADF4351_MODE = 0  # Frequency synthesizer
 LMK01010_MODE = 0 # Clock distribution/division/delay
 BICPINS_MODE = 0
+ADT7301_MODE = 0 # C1b temperature sensor
 
 # SPI clock = MCK/SCBR = 84Mc/SCBR (range 14..255)
 LTC2758_SPEED = 6       # 14Mc (40Mc later)
@@ -27,3 +28,4 @@ ADF4351_SPEED = 21      #  4Mc (slow for test)
 AD7175_SPEED = 21       #  4Mc (slow for test)
 MCP320x_SPEED = 84      #  1Mc
 BICPINS_SPEED = 84      #  1Mc
+ADT7301_SPEED = 84      #  1Mc

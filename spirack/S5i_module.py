@@ -1,6 +1,5 @@
-from .spi_rack import *
-from .chip_mode import *
-import math
+from .spi_rack import SPI_rack
+from .chip_mode import ADF4351_MODE, ADF4351_SPEED, MAX521x_MODE, MAX521x_SPEED, BICPINS_SPEED
 import numpy as np
 
 class S5i_module(object):
@@ -9,15 +8,14 @@ class S5i_module(object):
     This class does the low level interfacing with the S5i RF generator module.
     It requires an SPI Rack object and module number at initialization. A start
     up frequency can be given, otherwise it defaults to 100 MHz.
-    The RF frequency can be changed via setRfFrequency, which calculates the
+    The RF frequency can be changed via set_frequency, which calculates the
     register values and updates the frequency of the ADF4351.
 
     Attributes:
-        rfFrequency (float): the current set RF output frequency
+        rf_frequency (float): the current set RF output frequency
     """
 
-    def __init__(self, spi_rack, module, frequency=100e6, enable_output=1, output_level=1.0):
-    #def __init__(self, module, frequency=100e6):
+    def __init__(self, spi_rack, module, frequency=100e6, enable_output=1, output_level=0.0):
         """Inits S5i module class
 
         The S5i module needs an SPI_rack class for communication. If no frequency
@@ -28,7 +26,7 @@ class S5i_module(object):
             spi_rack: SPI_rack class object via which the communication runs
             module: module number set on the hardware
             frequency: RF frequency at startup (in Hz), default 100 MHz
-            output_level: RF output level, value between 0-1. Default at full power (1.0)
+            output_level: RF output level, value between -14 to 20. Default at 0 dBm
 
         Example:
             S5i_1 = S5i_module(SPI_Rack_1, 4)
@@ -39,14 +37,10 @@ class S5i_module(object):
 
         self.rf_frequency = frequency
         self.stepsize = 1e6
-        self.ref_frequency = 10e6
-        self.use_external = 0
+        self.set_reference('internal')
         self.output_status = enable_output
 
         self.set_output_power(output_level)
-
-        self.double = 0
-        self.div2 = 0
 
         # These are the 6 registers present in the ADF4351
         self.registers = 6*[0]
@@ -73,23 +67,18 @@ class S5i_module(object):
             # Write to ADF at SPI address 0
             self.spi_rack.write_data(self.module, 0, ADF4351_MODE, ADF4351_SPEED, data)
 
-    def set_doubler(self, value):
-        self.double = value
-
-    def set_div2(self, value):
-        self.div2 = value
-
     def set_output_power(self, level):
         """Sets the source output power
 
         Sets the output power of the unit. Can be varied over ~30 dB.
         Args:
-            level: value between 0 and 1 (float:0-1)
+            level: value between -14 and 20 (dBm))
         """
-        if level < 0 or level > 1:
-            raise ValueError('Level {} not allowed. Has to be between 0 and 1'.format(level))
+        if level < -14 or level > 20:
+            raise ValueError('Level {} not allowed. Has to be between -14 and 20 (dBm)'.format(level))
 
-        value = int((2**16-1) * level)
+        #value = int((2**16-1) * level)
+        value = int(1927.5*level + 38550)
         s_data = bytearray([64|(value>>10), (value>>2)&0xFF, (value&3)<<6])
         self.spi_rack.write_data(self.module, 1, MAX521x_MODE, MAX521x_SPEED, s_data)
 
@@ -101,22 +90,27 @@ class S5i_module(object):
         Args:
             enable (bool/int: 0-1): enables/disables RF output
         """
-        if enable != 0 :
+        if enable != 0:
             enable = 1
         self.registers[4] &= 0xFFFFFFDF
         self.registers[4] |= (enable<<5)
         self.write_registers()
         self.output_status = enable
 
-    # Does not do anythin yet
-    def use_external_reference(self, use_external):
-        #TODO: set bit on backplane to toggle between the two physically
-        if use_external == 1:
-            self.use_external = 1
-            self.ref_frequency = self.spi_rack.ref_frequency
+    def set_reference(self, reference):
+        """
+            DO NOT USE EXTERNAL REFERENCE!
+        """
+        possible_values = {'internal':0, 'external':1}
+        if reference not in possible_values:
+            raise ValueError('Value {} does not exist. Possible values are: {}'.format(reference, possible_values))
+
+        if reference == 'internal':
+            self.spi_rack.write_data(self.module, 5, 0, BICPINS_SPEED, bytearray([1<<3]))
         else:
-            self.use_external = 0
-            self.ref_frequency = 10e6
+            self.spi_rack.write_data(self.module, 5, 0, BICPINS_SPEED, bytearray([1<<2]))
+
+        self.reference = reference
 
     def set_stepsize(self, stepsize):
         """Sets the stepsize to be used in set_frequency()
@@ -126,8 +120,14 @@ class S5i_module(object):
         Args:
             stepsize: the stepsize in Hz, must be integer division of reference frequency
         """
-        R = self.ref_frequency / stepsize
-        if self.ref_frequency % stepsize == 0 and R < 1024:
+
+        if self.reference == 'internal':
+            local_ref = 10e6
+        else:
+            local_ref = self.spi_rack.ref_frequency
+
+        R = local_ref / stepsize
+        if R.is_integer() and R < 1024:
             self.stepsize = stepsize
         else:
             raise ValueError('"stepsize" value {} not allowed. Must be integer division of reference frequency below 1024'.format(stepsize))
@@ -155,12 +155,10 @@ class S5i_module(object):
         if frequency > 4.4e9 or frequency < 40e6:
             raise ValueError('Frequency {} not possible. Allowed frequencies: {}<f<{}'.format(frequency, 40e6, 4.4e9))
 
-        if self.div2:
-            local_ref = self.ref_frequency/2
-        elif self.double:
-            local_ref = self.ref_frequency*2
+        if self.reference == 'internal':
+            local_ref = 10e6
         else:
-            local_ref = self.ref_frequency
+            local_ref = self.spi_rack.ref_frequency
 
         #Calculate VCO output divider:
         div = 0
@@ -179,9 +177,9 @@ class S5i_module(object):
             prescaler = 0
             Nmin = 23
         #Get R from stepsize and reference frequency
-        R = int(local_ref / self.stepsize)
+        R = local_ref / self.stepsize
 
-        if frequency % self.stepsize != 0.0:
+        if not R.is_integer():
             raise ValueError('Frequency must be integer multiple of stepsize: {}'.format(self.stepsize))
         #Calculate INT value
         INT = int(frequency/self.stepsize)
@@ -190,29 +188,13 @@ class S5i_module(object):
             fmax = min(self.stepsize*65535, 4.4e9)
             raise ValueError('Frequency {} not possible with stepsize {}. Allowed frequencies: {}<f<{}'.format(frequency, self.stepsize, fmin, fmax))
 
-        #Check that band select is smaller than 10 kHz, otherwise divide
-        #until it is
-        #fpfd = local_ref/R
-
-        # band_sel = 1
-        # if fpfd > 10e3:
-        #     band_sel = int(math.ceil(fpfd/10e3))
-        # if band_sel > 255:
-        #     band_sel = 255
         band_sel = 255
-
-        #print("Div: " + str(div))
-        #print("prescaler: " + str(prescaler))
-        #print("R: " + str(R))
-        #print("INT: " + str(INT))
-        #print("fpfd: " + str(fpfd))
-        #print("band_sel: " + str(band_sel))
 
         self.rf_frequency = frequency
         # In REG4: Set calculated divider and band select, enable RF out at max power
         self.registers[4] = (div<<20) | (band_sel<<12) | (self.output_status<<5) | (3<<3) | 4
         # In REG2: Set calculated R value, enable double buffer, LDF=INT-N, LDP=6ns, PD_POL = Positive
-        self.registers[2] = (self.double<<25) | (self.div2<<24) | (R<<14) | (1<<13) | (7<<9) | (1<<8) | (1<<7) | (1<<6) | 2
+        self.registers[2] = (int(R)<<14) | (1<<13) | (7<<9) | (1<<8) | (1<<7) | (1<<6) | 2
         # In REG1: Set prescaler value
         self.registers[1] = (prescaler <<27) | (1<<15) | (2<<3) | 1
         # In REG0: Set calculated INT value
@@ -220,71 +202,40 @@ class S5i_module(object):
 
         self.write_registers()
 
-    def set_frequency_optimally(self, frequency):
-        """Calculates and sets the RF output to given frequency
+    def get_optimal_stepsize(self, frequency):
+        """Calculates and the optimal stepsize for given frequency
 
-        Calculates the registers for the given RF frequency, optimized for the
-        smalles value for the multiplier to minimize the (phase) noise. If the wanted
-        frequency is not possible, it will print a warning and set the frequency to
-        the closest possible. Writes the settings to the module after calculation
+        Calculates the stepsize that minimises the phase noise for a given
+        frequency.
+
         Args:
             frequency: the wanted output frequency in Hz
+        Returns:
+            R: the optimal stepsize
         """
-
         if frequency > 4.4e9 or frequency < 40e6:
             raise ValueError('Frequency {} not possible. Allowed frequencies: {}<f<{}'.format(frequency, 40e6, 4.4e9))
 
         #Get the backplane reference frequency
-        fref = float(self.spi_rack.ref_frequency)
-
-        #Calculate VCO output divider:
-        div = 0
-        for n in range(0,7):
-            VCO = 2**n * frequency
-            if VCO >= 2.2e9 and VCO <= 4.4e9:
-                div = n
-                break
+        if self.reference == 'internal':
+            local_ref = 10e6
+        else:
+            local_ref = self.spi_rack.ref_frequency
 
         #Prescaler: 0 (4/5) if < 3.6 GHz, 1 (8/9) if >= 3.6 GHz
         #Nmin changes with prescaler:
         if frequency >= 1.0e9:
-            prescaler = 1
             Nmin = 75
         else:
-            prescaler = 0
             Nmin = 23
 
         #Find INT/R relation with minimum size for INT to keep noise as low
-        #as possible. Find closest possible frequency if not possible and warn user
-        Nmax = int(1023 * frequency / fref)
+        #as possible.
+        Nmax = int(1023 * frequency / local_ref)
         n = np.arange(Nmin, Nmax)
-        R_t = n*fref/frequency
+        R_t = n*local_ref/frequency
         R_t_r = np.around(R_t)
         index = np.argmin(np.abs(R_t - R_t_r))
         R = int(R_t_r[index])
-        INT = n[index]
-        actual_frequency = INT * fref/R
-        if actual_frequency != frequency:
-            print("Warning! Frequency " + str(frequency) + " not possible, set to closest frequency: " + str(actual_frequency))
 
-        self.rf_frequency = actual_frequency
-        #Check that band select is smaller than 10 kHz, otherwise divide
-        #until it is
-        #fpfd = fref/R
-        # band_sel = 1
-        # if fpfd > 10e3:
-        #     band_sel = int(math.ceil(fpfd/10e3))
-        # if band_sel > 255:
-        #     band_sel = 255
-        band_sel = 255
-
-        # In REG4: Set calculated divider and band select, enable RF out at max power
-        self.registers[4] = (div<<20) | (band_sel<<12) | (self.output_status<<5) | (3<<3) | 4
-        # In REG2: Set calculated R value, enable double buffer, LDF=INT-N, LDP=6ns, PD_POL = Positive
-        self.registers[2] = (R<<14) | (1<<13) | (7<<9) | (1<<8) | (1<<7) | (1<<6) | 2
-        # In REG1: Set prescaler value
-        self.registers[1] = (prescaler <<27) | (2<<3) | 1
-        # In REG0: Set calculated INT value
-        self.registers[0] = (INT<<15)
-
-        self.write_registers()
+        return local_ref/R

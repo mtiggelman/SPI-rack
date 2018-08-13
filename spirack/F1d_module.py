@@ -1,5 +1,5 @@
 from .spi_rack import SPI_rack
-from .chip_mode import *
+from .chip_mode import MCP320x_MODE, MCP320x_SPEED, BICPINS_SPEED
 
 class F1d_module(object):
     """F1d module interface class

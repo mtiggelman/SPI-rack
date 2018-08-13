@@ -1,7 +1,7 @@
-import serial
-from .chip_mode import *
 from sys import version_info
 import threading
+import serial
+from .chip_mode import MCP320x_MODE, MCP320x_SPEED, ADT7301_SPEED, ADT7301_MODE
 
 class NoLock(object):
     """ Dummy lock object """
@@ -27,7 +27,7 @@ class SPI_rack(serial.Serial):
         refFrequency: the current reference frequency (in Hz)
     """
 
-    def __init__(self, port, baud, timeout, use_locks = True):
+    def __init__(self, port, baud, timeout, use_locks=True):
         """Inits SPI_rack class
 
         Args:
@@ -44,7 +44,7 @@ class SPI_rack(serial.Serial):
             SPI_Rack_1 = SPI_rack("COM1", 1000000, 1)
         """
         try:
-            super(SPI_rack, self).__init__(port, baud, timeout = timeout)
+            super(SPI_rack, self).__init__(port, baud, timeout=timeout)
         except ValueError:
             print("Timout value out of bound.")
         except serial.SerialException:
@@ -52,7 +52,7 @@ class SPI_rack(serial.Serial):
 
         self.active_module = None
         self.active_chip = None
-        self.active_speed  = None
+        self.active_speed = None
         self.ref_frequency = None
 
         if use_locks:
@@ -106,7 +106,7 @@ class SPI_rack(serial.Serial):
         """
 
         with self._tlock:
-            if (self.active_module != module or self.active_chip != chip or self.active_speed != SPI_speed):
+            if(self.active_module != module or self.active_chip != chip or self.active_speed != SPI_speed):
                 self._set_active(module, chip, SPI_mode, SPI_speed)
 
             s_data = bytearray([ord('w')]) + data
@@ -142,10 +142,30 @@ class SPI_rack(serial.Serial):
         else:
             return r_data
 
+    def get_temperature(self):
+        """ Returns the temperature in the C1b module
+
+        Reads the temperature from the internal C1b temperature sensor. Does not
+        work for the C1. Accuracy is +- 0.5 degrees in 0-70 degree range
+
+        Returns:
+            Temperature (float) in Celcius
+        """
+        s_data = bytearray([0, 0])
+        r_data = self.read_data(0, 1, ADT7301_MODE, ADT7301_SPEED, s_data)
+        t_data = (r_data[0]<<8) | r_data[1]
+
+        # Check sign bit for negative value
+        if (t_data & 0x2000) == 0x2000:
+            return (t_data - 16384)/32
+
+        return t_data/32
+
     def get_battery(self):
         """Returns battery voltages
 
-        Calculates the battery voltages from the ADC channel values.
+        Calculates the battery voltages from the ADC channel values. Currently only
+        works for the C1b/C2.
 
         Returns:
             Voltages (float): [VbatPlus, VbatMin]
