@@ -30,7 +30,7 @@ class S5i_module(object):
 
         Example:
             S5i_1 = S5i_module(SPI_Rack_1, 4)
-            S5i_2 = S5i_module(SPI_rack_1, 2, frequency=200, output_level=0.3)
+            S5i_2 = S5i_module(SPI_rack_1, 2, frequency=200e6, output_level=0.3)
         """
         self.spi_rack = spi_rack
         self.module = module
