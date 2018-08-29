@@ -1,5 +1,5 @@
 # SPI Rack
-The SPI Rack is a modular electronic instrumentation platform developed by QuTech. It has been developed to perform measurements on nanoelectronic devices, but is not limited to these experiments. Design priority was the minimalisation of noise and interference signals on the wires connected to the measured device (sample). To learn more about the SPI Rack, the use cases and the available modules, browse the [homepage](http://qtwork.tudelft.nl/~mtiggelman/).
+The SPI Rack is a modular electronic instrumentation platform developed by QuTech. It has been developed to perform measurements on nanoelectronic devices, but is not limited to this. Design priority was the minimization of noise and interference signals on the wires connected to the measured device (sample). To learn more about the SPI Rack, use cases and the available modules, browse the [homepage](http://qtwork.tudelft.nl/~mtiggelman/).
 
 This repository contains the Python code to interface with the hardware. All the low level communication is handled by the classes and the user is presented with an easy interface to control the modules. Here is a simple example on how to use the D5a (16 channel 18-bit DAC module) to show how easy it is to get going:
 
