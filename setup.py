@@ -35,6 +35,7 @@ setup(name='spirack',
       classifiers = [],
       install_requires=[
         'pyserial',
+        'numpy'
       ],
       package_data={
         '': ['*.cat', '*.inf']

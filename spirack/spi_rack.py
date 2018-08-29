@@ -22,9 +22,10 @@ class SPI_rack(serial.Serial):
     An instance of SPI rack needs to be passed to every module.
 
     Attributes:
-        activeModule: keeps track of which module is currently active
-        activeChip: keeps track of which chip in a module is currently active
-        refFrequency: the current reference frequency (in Hz)
+        active_module: keeps track of which module is currently active
+        active_chip: keeps track of which chip in a module is currently active
+        active_speed: keeps track of the current SPI speed the controller is set to
+        ref_frequency: the current reference frequency (in Hz)
     """
 
     def __init__(self, port, baud, timeout, use_locks=True):
@@ -151,9 +152,10 @@ class SPI_rack(serial.Serial):
         Returns:
             Temperature (float) in Celcius
         """
-        s_data = bytearray([0, 0])
-        r_data = self.read_data(0, 1, ADT7301_MODE, ADT7301_SPEED, s_data)
-        t_data = (r_data[0]<<8) | r_data[1]
+        with self._tlock:
+            s_data = bytearray([0, 0])
+            r_data = self.read_data(0, 1, ADT7301_MODE, ADT7301_SPEED, s_data)
+            t_data = (r_data[0]<<8) | r_data[1]
 
         # Check sign bit for negative value
         if (t_data & 0x2000) == 0x2000:
@@ -186,9 +188,9 @@ class SPI_rack(serial.Serial):
         Returns:
             12-bit ADC data (int)
         """
-
-        s_data = bytearray([1, 160|(channel<<6), 0])
-        r_data = self.read_data(0, 0, MCP320x_MODE, MCP320x_SPEED, s_data)
+        with self._tlock:
+            s_data = bytearray([1, 160|(channel<<6), 0])
+            r_data = self.read_data(0, 0, MCP320x_MODE, MCP320x_SPEED, s_data)
 
         return (r_data[1] & 0xf)<<8 | r_data[2]
 

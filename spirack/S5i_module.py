@@ -13,6 +13,8 @@ class S5i_module(object):
 
     Attributes:
         rf_frequency (float): the current set RF output frequency
+        stepsize (float): the current stepsize
+        output_status (bool/int: 0-1): output enabled/disabled by software
     """
 
     def __init__(self, spi_rack, module, frequency=100e6, enable_output=1, output_level=0.0):

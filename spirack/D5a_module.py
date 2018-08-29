@@ -12,9 +12,6 @@ Attributes:
     range_8V_uni (int): Constant to set span to 0V to 8V
     range_8V_bi (int): Constant to set span to -8V to 4V
     range_2V_bi (int): Constant to set span to -2V to 2V
-
-Todo:
-    *Add software support for +-8V mode
 """
 
 import time

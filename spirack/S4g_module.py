@@ -25,10 +25,10 @@ class S4g_module(object):
 
     This class does the low level interfacing with the S4g module. When creating
     an instance it requires a SPI_rack class passed as a parameter. The analog
-    span of the DAC module can be set via software for each of the 8 DACs/current
+    span of the DAC module can be set via software for each of the 4 DACs/current
     sources
 
-    Setting the voltage can happen via the set_current function. Other ways are
+    Setting the current can happen via the set_current function. Other ways are
     the change_value_update function, which immediately updates the output of the
     DAC, or via the change_value function. This function writes the new value to
     the DAC but does not update the output until the update function is ran.
