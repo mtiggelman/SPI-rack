@@ -1,5 +1,5 @@
 # SPI Rack
-The SPI Rack is a modular electronic instrumentation platform developed by QuTech. It has been developed to perform measurements on nanoelectronic devices, but is not limited to this. Design priority was the minimization of noise and interference signals on the wires connected to the measured device (sample). To learn more about the SPI Rack, use cases and the available modules, browse the [homepage](http://qtwork.tudelft.nl/~mtiggelman/).
+The SPI Rack is a modular electronic instrumentation platform developed by QuTech. It has been developed to perform measurements on nanoelectronic devices, but is not limited to this. Design priority was the minimization of noise and interference signals on the wires connected to the measured device (sample). To learn more about the SPI Rack, use cases and the available modules, browse the [homepage](http://homepage.tudelft.nl/z3b4g/).
 
 This repository contains the Python code to interface with the hardware. All the low level communication is handled by the classes and the user is presented with an easy interface to control the modules. Here is a simple example on how to use the D5a (16 channel 18-bit DAC module) to show how easy it is to get going:
 
@@ -18,14 +18,14 @@ D5a = D5a_module(spi, module=2)
 # Set the output of DAC 1 to the desired voltage
 D5a.set_voltage(0, voltage=2.1)
 ```
-More examples can be found as Jupyter notebooks in [examples](https://github.com/Rubenknex/SPI-rack/tree/master/examples) or at the [website](http://qtwork.tudelft.nl/~mtiggelman/software/examples.html).
+More examples can be found as Jupyter notebooks in [examples](https://github.com/Rubenknex/SPI-rack/tree/master/examples) or at the [website](http://homepage.tudelft.nl/z3b4g/software/examples.html).
 
 ## Installation
 **Windows users:** before connecting the SPI-rack for the first time, install the drivers located
 in `drivers.zip`. On 64-bit systems run `SPI-Rack_x64`, on 32-bit systems
 run `SPI-Rack_x86`.
 
-For a basic install use: `pip install spirack`. For more details see the website [here](http://qtwork.tudelft.nl/~mtiggelman/software/setup.html).
+For a basic install use: `pip install spirack`. For more details see the website [here](http://homepage.tudelft.nl/z3b4g/software/setup.html).
 
 ## Qcodes
 A Qcodes wrapper for the instrument is available from https://github.com/QCoDeS/Qcodes
