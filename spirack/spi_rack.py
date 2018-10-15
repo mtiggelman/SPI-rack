@@ -92,8 +92,8 @@ class SPI_rack(serial.Serial):
         self.write(s_data)
 
         self.active_module = module
-        self.active_chip   = chip
-        self.active_speed  = SPI_speed
+        self.active_chip = chip
+        self.active_speed = SPI_speed
 
     def write_data(self, module, chip, SPI_mode, SPI_speed, data):
         """Write data to selected module/chip combination
@@ -107,7 +107,8 @@ class SPI_rack(serial.Serial):
         """
 
         with self._tlock:
-            if(self.active_module != module or self.active_chip != chip or self.active_speed != SPI_speed):
+            if(self.active_module != module or self.active_chip != chip
+               or self.active_speed != SPI_speed):
                 self._set_active(module, chip, SPI_mode, SPI_speed)
 
             s_data = bytearray([ord('w')]) + data
@@ -140,8 +141,8 @@ class SPI_rack(serial.Serial):
 
         if version_info[0] < 3:
             return [ord(c) for c in r_data]
-        else:
-            return r_data
+
+        return r_data
 
     def get_temperature(self):
         """ Returns the temperature in the C1b module
@@ -171,11 +172,11 @@ class SPI_rack(serial.Serial):
         Returns:
             Voltages (float): [VbatPlus, VbatMin]
         """
-        Vbatplus = 2.171*3.3*self.read_adc(1)/4096.0
-        Vbatmin = -2.148*3.3*self.read_adc(0)/4096.0
+        Vbatplus = 2.171*3.3*self._read_adc(1)/4096.0
+        Vbatmin = -2.148*3.3*self._read_adc(0)/4096.0
         return [Vbatplus, Vbatmin]
 
-    def read_adc(self, channel):
+    def _read_adc(self, channel):
         """Reads the ADC for battery voltage
 
         Reads the given ADC channel. These channels are connected to the raw
@@ -224,3 +225,22 @@ class SPI_rack(serial.Serial):
         with self._tlock:
             s_data = bytearray([ord('l')])
             self.write(s_data)
+
+    def get_firmware_version(self):
+        """Gets the firmware version
+
+        Returns the firmware version of the C1/C2 as string in format:
+        'version - compilation date - author'. Only from firmware
+        version 1.5 onwards.
+
+        Args:
+            none
+        Returns:
+            Firmware version (str)
+        """
+        with self._tlock:
+            s_data = bytearray([ord('v')])
+            self.write(s_data)
+
+            version = self.readline().decode('utf-8')
+            return version[:-1]

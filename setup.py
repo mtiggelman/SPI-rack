@@ -20,23 +20,30 @@ def get_version(verbose=0):
         print('get_version_info: %s' % FULLVERSION)
     return FULLVERSION
 
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
 version = get_version()
 
 setup(name='spirack',
       version=version,
       description='Drivers for the QuTech SPI-rack',
-      url='https://github.com/Rubenknex/SPI-rack',
-      download_url='https://github.com/Rubenknex/SPI-rack/archive/%s.tar.gz' % version,
+      long_description=long_description,
+      long_description_content_type="text/markdown",
+      url='https://github.com/mtiggelman/SPI-rack',
       author='Marijn Tiggelman',
       author_email='qutechdev@gmail.com',
       license='MIT',
       packages=['spirack'],
-      keywords = ['SPI', 'Qcodes', 'SPI-rack'],
-      classifiers = [],
+      keywords=['SPI', 'Qcodes', 'SPI-rack', 'QuTech', 'TU Delft', 'SPI'],
+      classifiers=(
+          "Programming Language :: Python :: 3",
+          "License :: OSI Approved :: MIT License",
+          "Operating System :: OS Independent"),
       install_requires=[
-        'pyserial',
-        'numpy'
+          'pyserial',
+          'numpy'
       ],
       package_data={
-        '': ['*.cat', '*.inf']
+          '': ['*.cat', '*.inf']
 })
