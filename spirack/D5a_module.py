@@ -17,7 +17,6 @@ Attributes:
 import time
 import numpy as np
 
-from .spi_rack import SPI_rack
 from .chip_mode import LTC2758_MODE, LTC2758_SPEED, LTC2758_RD_SPEED
 
 class D5a_module(object):
@@ -74,7 +73,7 @@ class D5a_module(object):
             for i in range(self._num_dacs):
                 if np.abs(self.voltages[i])>1e-3:
                     # we need to ramp to zero first
-                    print('D5a_module: ramping dac %d from %.3f V to zero' % (i, self.voltages[i]) )
+                    print('D5a_module: ramping dac %d from %.3f V to zero' % (i, self.voltages[i]))
                     ramp_step = 10e-3
                     ramp_delay = 10e-3
                     steps = np.arange(0, self.voltages[i], np.sign(self.voltages[i])*ramp_step)[::-1]
