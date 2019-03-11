@@ -17,7 +17,6 @@ Todo:
 
 import numpy as np
 
-from .spi_rack import SPI_rack
 from .chip_mode import LTC2758_MODE, LTC2758_SPEED
 
 class S4g_module(object):
@@ -40,14 +39,14 @@ class S4g_module(object):
     """
 
     # DAC software span constants
-    range_50mA_uni = 0
-    range_50mA_bi = 2
-    range_25mA_bi = 4
+    range_max_uni = 0
+    range_max_bi = 2
+    range_min_bi = 4
 
     # Mapping of virtual DACs/Current outputs to physical DAC ICs
     DAC_mapping = {0:7, 1:6, 2:3, 3:2}
 
-    def __init__(self, spi_rack, module, reset_currents=True):
+    def __init__(self, spi_rack, module, max_current=50e-3, reset_currents=True):
         """Inits S4g module class
 
         The S4g_module class needs an SPI_rack object at initiation. All
@@ -58,6 +57,7 @@ class S4g_module(object):
         Args:
             spi_rack (SPI_rack object): SPI_rack class object via which the communication runs
             module (int): module number set on the hardware
+            current_range (float): maximum range of the S4g, configured in hardware
             reset_currents (bool): if True, then reset all currents to zero and
                                    change the span to `range_50mA_bi`
         """
@@ -65,13 +65,14 @@ class S4g_module(object):
         self.module = module
         self.span = [np.NaN]*4
         self.currents = [np.NaN]*4
+        self.max_current = max_current
 
         for i in range(4):
             self.currents[i], self.span[i] = self.get_settings(i)
 
         if reset_currents:
             for i in range(4):
-                self.change_span(i, S4g_module.range_50mA_bi)
+                self.change_span(i, S4g_module.range_max_bi)
                 self.set_current(i, 0.0)
 
     def change_span_update(self, DAC, span):
@@ -213,21 +214,21 @@ class S4g_module(object):
         """
         step = self.get_stepsize(DAC)
 
-        if self.span[DAC] == S4g_module.range_50mA_uni:
+        if self.span[DAC] == S4g_module.range_max_uni:
             bit_value = int(current / step)
             self.currents[DAC] = bit_value * step
-            maxI = 50e-3
+            maxI = self.max_current
             minI = 0.0
-        elif self.span[DAC] == S4g_module.range_50mA_bi:
-            bit_value = int((current + 50e-3) / step)
-            self.currents[DAC] = (bit_value * step) - 50e-3
-            maxI = 50e-3
-            minI = -50e-3
-        elif self.span[DAC] == S4g_module.range_25mA_bi:
-            bit_value = int((current + 25e-3) / step)
-            self.currents[DAC] = (bit_value * step) - 25.0e-3
-            maxI = 25e-3
-            minI = -25e-3
+        elif self.span[DAC] == S4g_module.range_max_bi:
+            bit_value = int((current + self.max_current) / step)
+            self.currents[DAC] = (bit_value * step) - self.max_current
+            maxI = self.max_current
+            minI = -self.max_current
+        elif self.span[DAC] == S4g_module.range_min_bi:
+            bit_value = int((current + (self.max_current/2.0)) / step)
+            self.currents[DAC] = (bit_value * step) - (self.max_current/2.0)
+            maxI = self.max_current/2.0
+            minI = -(self.max_current/2.0)
 
         if current >= maxI:
             bit_value = (2**18)-1
@@ -253,12 +254,12 @@ class S4g_module(object):
         Returns:
             Smallest current step possible with DAC (float)
         """
-        if self.span[DAC] == S4g_module.range_50mA_uni:
-            return 50.0e-3/(2**18)
-        if self.span[DAC] == S4g_module.range_50mA_bi:
-            return 100.0e-3/(2**18)
-        if self.span[DAC] == S4g_module.range_25mA_bi:
-            return 50.0e-3/(2**18)
+        if self.span[DAC] == S4g_module.range_max_uni:
+            return self.max_current/(2**18)
+        if self.span[DAC] == S4g_module.range_max_bi:
+            return self.max_current/(2**17)
+        if self.span[DAC] == S4g_module.range_min_bi:
+            return self.max_current/(2**18)
 
     def get_settings(self, DAC):
         """Reads current DAC settings
@@ -293,12 +294,12 @@ class S4g_module(object):
         span_data = self.spi_rack.read_data(self.module, DAC_ic, LTC2758_MODE, LTC2758_SPEED, data)
         span = span_data[2]
 
-        if span == S4g_module.range_50mA_uni:
-            current = (code*50e-3/(2**18))
-        elif span == S4g_module.range_50mA_bi:
-            current = (code*100e-3/(2**18)) - 50e-3
-        elif span == S4g_module.range_25mA_bi:
-            current = (code*50e-3/(2**18)) - 25e-3
+        if span == S4g_module.range_max_uni:
+            current = (code*self.max_current/(2**18))
+        elif span == S4g_module.range_max_bi:
+            current = (code*self.max_current/(2**17)) - self.max_current
+        elif span == S4g_module.range_min_bi:
+            current = (code*self.max_current/(2**18)) - (self.max_current/2.0)
         else:
             raise ValueError("Span {} should not be used. Accepted values are: {}".format(span, [0, 2, 4]))
 

@@ -46,4 +46,4 @@ setup(name='spirack',
       ],
       package_data={
           '': ['*.cat', '*.inf']
-})
+      })
