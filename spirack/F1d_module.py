@@ -92,7 +92,7 @@ class F1d_module(object):
         is possible via software.
 
         Args:
-            value (int): cutoff frequency in MHz. Possible values: 1, 3, 10, 20
+            value (int): cutoff frequency in MHz. Possible values: 1, 3, 10, 30
         Raises:
             ValueError: if value parameter is not in the list of possible values
         """

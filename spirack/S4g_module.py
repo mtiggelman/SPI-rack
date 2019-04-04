@@ -7,9 +7,9 @@ Example:
         S4g = spirack.S4g_module(SPI_Rack1, 2, True)
 
 Attributes:
-    range_50mA_uni (int): Constant to set span to 0 to 5 mA
-    range_50mA_bi (int): Constant to set span to -50mA to 50mA
-    range_25mA_bi (int): Constant to set span to -25mA to 25mA
+    range_max_uni (int): Constant to set span to 0 to max mA
+    range_max_bi (int): Constant to set span from -max mA to max mA
+    range_min_bi (int): Constant to set span to -max/2 mA to max/2 mA
 
 Todo:
     *Add checks on writing span and values
@@ -17,7 +17,7 @@ Todo:
 
 import numpy as np
 
-from .chip_mode import LTC2758_MODE, LTC2758_SPEED
+from .chip_mode import LTC2758_MODE, LTC2758_SPEED, LTC2758_RD_SPEED
 
 class S4g_module(object):
     """S4g module interface class
@@ -284,14 +284,14 @@ class S4g_module(object):
         command = 0b1101
         data = bytearray([(command<<4) | address, 0, 0, 0])
 
-        code_data = self.spi_rack.read_data(self.module, DAC_ic, LTC2758_MODE, LTC2758_SPEED, data)
+        code_data = self.spi_rack.read_data(self.module, DAC_ic, LTC2758_MODE, LTC2758_RD_SPEED, data)
         code = (code_data[1]<<10) | (code_data[2]<<2) | (code_data[3]>>6)
 
         # Read span command
         command = 0b1100
         data = bytearray([(command<<4) | address, 0, 0, 0])
 
-        span_data = self.spi_rack.read_data(self.module, DAC_ic, LTC2758_MODE, LTC2758_SPEED, data)
+        span_data = self.spi_rack.read_data(self.module, DAC_ic, LTC2758_MODE, LTC2758_RD_SPEED, data)
         span = span_data[2]
 
         if span == S4g_module.range_max_uni:
