@@ -21,11 +21,13 @@ LMK01010_MODE = 0 # Clock distribution/division/delay
 BICPINS_MODE = 0
 ADT7301_MODE = 0 # C1b temperature sensor
 CRYOMUX_MODE = 0 # cryomux shift register
+SAMD51_MODE = 0 # SAMD51G19A microcontroller
 
 # SPI clock = MCK/SCBR = 84MHz/SCBR (range 14..255)
 LTC2758_SPEED = 6       # 14MHz (40MHz later)
 LTC2758_RD_SPEED = 8    # 10.5MHz
 AD9106_SPEED = 6        # 14MHz (Can go higher)
+SAMD51_SPEED = 6        # 14MHz (assuming uc running at 100+ MHz core speed)
 MAX5702_SPEED = 6       # 14MHz
 MAX521x_SPEED = 6       # 14MHz
 LMK01010_SPEED = 6      # 14MHz

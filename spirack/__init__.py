@@ -10,3 +10,4 @@ from .S4g_module import S4g_module
 from .S5k_module import S5k_module
 from .M2j_module import M2j_module
 from .U2_module import U2_module
+from .D5b_module import D5b_module

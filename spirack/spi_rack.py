@@ -144,6 +144,32 @@ class SPI_rack(serial.Serial):
 
         return r_data
 
+    def trigger_now(self):
+        """ Sends trigger signal immediately
+
+        Sends a trigger signal to the backplane on trigger 1 immediately.
+
+        Args:
+            none
+        Return:
+            none
+        """
+        self.write(bytearray([ord('t')]))
+        self.write_data(0, 3, 0, 84, bytearray([0x00]))
+
+    def trigger_arm(self):
+        """ Sends trigger signal at next data message
+
+        Sends a trigger signal to the backplane on trigger 1 at the next
+        write_data or read_data call. Timing is assured by the C2 unit.
+
+        Args:
+            none
+        Return:
+            none
+        """
+        self.write(bytearray([ord('t')]))
+
     def get_temperature(self):
         """ Returns the temperature in the C1b module
 
