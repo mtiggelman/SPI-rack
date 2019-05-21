@@ -289,12 +289,12 @@ class D5b_module():
         """Sets the holdoff time from the trigger moment
 
         Sets the time the system waits after the trigger for outputting the toggling
-        DACs. The mimimum time is 10 us, and the resolution is 100ns.
+        DACs. The mimimum time is 30 us, and the resolution is 100ns.
 
         Args:
-            holdoff_time (seconds): amount of time to wait after trigger (minimum 10 us)
+            holdoff_time (seconds): amount of time to wait after trigger (minimum 30 us)
         """
-        if holdoff_time < 10e-6:
+        if holdoff_time < 30e-6:
             raise ValueError('D5b module {}: holdoff time {} seconds not allowed. '
                              'Has to be mimimum 10 us.'.format(self.module, holdoff_time))
 
@@ -333,11 +333,11 @@ class D5b_module():
         value of 10000 (1e-3/100e-9).
 
         Args:
-            value (int): toggle time in multiple of 100 ns (minimum 200)
+            value (int): toggle time in multiple of 100 ns (minimum 300)
         """
-        if value < 200:
+        if value < 300:
             raise ValueError('D5b module {}: toggle time {} not allowed. '
-                             'Has to be mimimum 200.'.format(self.module, value))
+                             'Has to be mimimum 300.'.format(self.module, value))
 
         rw_bit = 1
         command = self._command.TOGGLE_TIME
