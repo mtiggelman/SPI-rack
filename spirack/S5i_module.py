@@ -74,12 +74,11 @@ class S5i_module(object):
 
         Sets the output power of the unit. Can be varied over ~30 dB.
         Args:
-            level: value between -14 and 20 (dBm))
+            level: value between -20 and 14 (dBm))
         """
-        if level < -14 or level > 20:
-            raise ValueError('Level {} not allowed. Has to be between -14 and 20 (dBm)'.format(level))
+        if level < -20 or level > 14:
+            raise ValueError('Level {} not allowed. Has to be between -20 and 14 (dBm)'.format(level))
 
-        #value = int((2**16-1) * level)
         value = int(1927.5*level + 38550)
         s_data = bytearray([64|(value>>10), (value>>2)&0xFF, (value&3)<<6])
         self.spi_rack.write_data(self.module, 1, MAX521x_MODE, MAX521x_SPEED, s_data)

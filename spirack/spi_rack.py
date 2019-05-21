@@ -45,7 +45,7 @@ class SPI_rack(serial.Serial):
             SPI_Rack_1 = SPI_rack("COM1", 1000000, 1)
         """
         try:
-            super(SPI_rack, self).__init__(port, baud, timeout=timeout)
+            super(SPI_rack, self).__init__(port, baud, timeout=timeout, write_timeout = 0)
         except ValueError:
             print("Timout value out of bound.")
         except serial.SerialException:
