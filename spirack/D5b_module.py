@@ -19,7 +19,7 @@ from .chip_mode import SAMD51_MODE, SAMD51_SPEED
 
 logger = logging.getLogger(__name__)
 
-class D5b_module():
+class D5b_module(object):
     """D5b module interface class
 
     This class does the low level interfacing with the D5b module. When creating
@@ -296,7 +296,7 @@ class D5b_module():
         """
         if holdoff_time < 30e-6:
             raise ValueError('D5b module {}: holdoff time {} seconds not allowed. '
-                             'Has to be mimimum 10 us.'.format(self.module, holdoff_time))
+                             'Has to be mimimum 30 us.'.format(self.module, holdoff_time))
 
         rw_bit = 1
         command = self._command.TRIGGER_HOLDOFF
