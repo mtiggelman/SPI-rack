@@ -11,3 +11,5 @@ from .S5k_module import S5k_module
 from .M2j_module import M2j_module
 from .U2_module import U2_module
 from .D5b_module import D5b_module
+from .B2b_module import B2b_module
+from .D4b_module import D4b_module

@@ -115,6 +115,8 @@ class D5b_module(object):
         if span not in range_values:
             raise ValueError('D5b module {}: value {} not allowed for span. Possible values '
                              'are: {}'.format(self.module, span, [*range_values.keys()]))
+        if DAC not in range(8):
+            raise ValueError('D5b module {}: DAC {} does not exist.'.format(self.module, DAC))
 
         rw_bit = 1
         command = self._command.DAC_SPAN
@@ -132,6 +134,9 @@ class D5b_module(object):
         Returns:
             Set span of the DAC (string)
         """
+        if DAC not in range(8):
+            raise ValueError('D5b module {}: DAC {} does not exist.'.format(self.module, DAC))
+
         command = self._command.DAC_SPAN
         wdata = bytearray([command.value, 1, DAC, 0xFF, 0xFF])
         rdata = self.spi_rack.read_data(self.module, 0, SAMD51_MODE, SAMD51_SPEED, wdata)
@@ -155,6 +160,8 @@ class D5b_module(object):
         if mode not in possible_values:
             raise ValueError('D5b module {}: value {} does not exist. Possible values '
                              'are: {}'.format(self.module, mode, [*possible_values.keys()]))
+        if DAC not in range(8):
+            raise ValueError('D5b module {}: DAC {} does not exist.'.format(self.module, DAC))
 
         rw_bit = 1
         command = self._command.DAC_MODE
@@ -172,6 +179,9 @@ class D5b_module(object):
         Returns:
             The DAC mode (string)
         """
+        if DAC not in range(8):
+            raise ValueError('D5b module {}: DAC {} does not exist.'.format(self.module, DAC))
+
         command = self._command.DAC_MODE
         wdata = bytearray([command.value, 1, DAC, 0xFF, 0xFF])
         rdata = self.spi_rack.read_data(self.module, 0, SAMD51_MODE, SAMD51_SPEED, wdata)
@@ -196,6 +206,9 @@ class D5b_module(object):
             update (bool): if True updates the output immediately, if False updates
                            with the next span/value update
         """
+        if DAC not in range(8):
+            raise ValueError('D5b module {}: DAC {} does not exist.'.format(self.module, DAC))
+
         span = self.get_DAC_span(DAC)
         dat = self._calc_value_from_voltage(span, voltage)
 
@@ -219,6 +232,9 @@ class D5b_module(object):
             DAC (int: 0-7): DAC of which to set the voltage
             voltage (float): positive toggle voltage
         """
+        if DAC not in range(8):
+            raise ValueError('D5b module {}: DAC {} does not exist.'.format(self.module, DAC))
+
         span = self.get_DAC_span(DAC)
         dat = self._calc_value_from_voltage(span, voltage)
 
@@ -241,6 +257,9 @@ class D5b_module(object):
             DAC (int: 0-7): DAC of which to set the voltage
             voltage (float): negative toggle voltage
         """
+        if DAC not in range(8):
+            raise ValueError('D5b module {}: DAC {} does not exist.'.format(self.module, DAC))
+
         span = self.get_DAC_span(DAC)
         dat = self._calc_value_from_voltage(span, voltage)
 
@@ -263,6 +282,9 @@ class D5b_module(object):
         Returns:
             List with voltages: [voltage, negative_toggle_voltage, positive_toggle_voltage]
         """
+        if DAC not in range(8):
+            raise ValueError('D5b module {}: DAC {} does not exist.'.format(self.module, DAC))
+
         span = self.get_DAC_span(DAC)
 
         command = self._command.DAC_VALUE
@@ -324,20 +346,24 @@ class D5b_module(object):
         value = (rdata[-4]<<24) | (rdata[-3]<<16) | (rdata[-2]<<8) | (rdata[-1])
         return round((value+22)*100e-9, 7)
 
-    def set_toggle_time(self, value):
+    def set_toggle_time(self, toggle_time):
         """Sets the toggle time
 
         Sets the toggle time for all the DACs set to 'toggle' mode. The value set is
         the time how long the DAC stays high or low. It is a multiple of of the 100 ns
-        clock used for the timing. So for example: toggling every 1 ms would be a
-        value of 10000 (1e-3/100e-9).
+        clock used for the timing, this means sub 100 ns resolution is not possible.
 
         Args:
-            value (int): toggle time in multiple of 100 ns (minimum 300)
+            value (float): toggle time in seconds (minimum 300ns)
         """
-        if value < 300:
+        if toggle_time < 300e-9:
             raise ValueError('D5b module {}: toggle time {} not allowed. '
-                             'Has to be mimimum 300.'.format(self.module, value))
+                             'Has to be mimimum 300ns.'.format(self.module, toggle_time))
+
+        value = int(toggle_time/100e-9)
+        if np.around(value*100e-9, 9) != toggle_time:
+            raise ValueError('D5b module {}: toggle time {} not allowed. '
+                             'Has to be a multiple of 100ns.'.format(self.module, toggle_time))
 
         rw_bit = 1
         command = self._command.TOGGLE_TIME
@@ -355,14 +381,14 @@ class D5b_module(object):
         for more details.
 
         Returns:
-            toggle time in multiples of 100 ns (int)
+            toggle time in seconds (float)
         """
         command = self._command.TOGGLE_TIME
         wdata = bytearray([command.value, 4, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF])
         rdata = self.spi_rack.read_data(self.module, 0, SAMD51_MODE, SAMD51_SPEED, wdata)
 
         toggle_time = (rdata[-4]<<24) | (rdata[-3]<<16) | (rdata[-2]<<8) | (rdata[-1])
-        return toggle_time
+        return np.around(toggle_time*100e-9,9)
 
     def set_toggle_amount(self, amount):
         """Sets the toggle amount
@@ -528,6 +554,17 @@ class D5b_module(object):
 
         return values[rdata[-1]]
 
+    def software_trigger(self):
+        """Triggers the S5b
+
+        This allows the user to trigger the S5b via software, not using the trigger lines
+        on the backplane of the SPI rack.
+        """
+        command = self._command.SOFTWARE_TRIGGER
+        header = 128 | command.value
+        wdata = bytearray([header, 1, 0])
+        self.spi_rack.write_data(self.module, 0, SAMD51_MODE, SAMD51_SPEED, wdata)
+
 class D5b_Command(Enum):
     """
     Commands used for communicating with the S5b module
@@ -546,3 +583,4 @@ class D5b_Command(Enum):
     TOGGLE_AMOUNT = 11
     STATUS_CMD = 12
     CANCEL_CMD = 13
+    SOFTWARE_TRIGGER = 14

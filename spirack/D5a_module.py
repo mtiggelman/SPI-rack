@@ -244,27 +244,27 @@ class D5a_module(object):
         step = self.get_stepsize(DAC)
 
         if self.span[DAC] == D5a_module.range_4V_uni:
-            bit_value = int(voltage / step)
+            bit_value = int(round(voltage / step))
             self.voltages[DAC] = bit_value * step
             maxV = 4.0
             minV = 0.0
         elif self.span[DAC] == D5a_module.range_4V_bi:
-            bit_value = int((voltage + 4.0) / step)
+            bit_value = int(round((voltage + 4.0) / step))
             self.voltages[DAC] = (bit_value * step) - 4.0
             maxV = 4.0
             minV = -4.0
         if self.span[DAC] == D5a_module.range_8V_uni:
-            bit_value = int(voltage / step)
+            bit_value = int(round(voltage / step))
             self.voltages[DAC] = bit_value * step
             maxV = 8.0
             minV = 0.0
         elif self.span[DAC] == D5a_module.range_8V_bi:
-            bit_value = int((voltage + 8.0) / step)
+            bit_value = int(round((voltage + 8.0) / step))
             self.voltages[DAC] = (bit_value * step) - 8.0
             maxV = 8.0
             minV = -8.0
         elif self.span[DAC] == D5a_module.range_2V_bi:
-            bit_value = int((voltage + 2.0) / step)
+            bit_value = int(round((voltage + 2.0) / step))
             self.voltages[DAC] = (bit_value * step) - 2.0
             maxV = 2.0
             minV = -2.0
