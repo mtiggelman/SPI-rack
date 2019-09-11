@@ -450,7 +450,7 @@ class B2b_module(object):
             ADC (int:0-1): ADC of which to get the filter
         
         Returns:
-            filter_rate (string): the current filter type
+            filter_type (string): the current filter type
         """
         if ADC not in range(2):
             raise ValueError('{} module {}: ADC {} does not exist.'.format(self.type, self.module, ADC))
@@ -500,7 +500,7 @@ class B2b_module(object):
         """Gives the sample rate of the given ADC
 
         Gives the sample rate in seconds of the ADC. This corresponds to the values in the 
-        filter table. These values can be used for plotting of a FFT calculation.
+        filter table. These values can be used for plotting or a FFT calculation.
         
         Args:
             ADC (int:0-1): ADC of which to get the sample time
