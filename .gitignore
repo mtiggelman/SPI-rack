@@ -72,6 +72,10 @@ target/
 # IPython Notebook
 .ipynb_checkpoints
 
+# vscode
+.idea
+.vscode
+
 # pyenv
 .python-version
 

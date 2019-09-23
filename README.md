@@ -18,7 +18,7 @@ D5a = D5a_module(spi, module=2)
 # Set the output of DAC 1 to the desired voltage
 D5a.set_voltage(0, voltage=2.1)
 ```
-More examples can be found as Jupyter notebooks in [examples](https://github.com/Rubenknex/SPI-rack/tree/master/examples) or at the [website](http://qtwork.tudelft.nl/~mtiggelman/software/examples.html).
+More examples can be found as Jupyter notebooks in [examples](https://github.com/mtiggelman/SPI-rack/tree/master/examples) or at the [website](http://qtwork.tudelft.nl/~mtiggelman/software/examples.html).
 
 ## Installation
 **Windows users:** before connecting the SPI-rack for the first time, install the drivers located
@@ -31,4 +31,4 @@ For a basic install use: `pip install spirack`. For more details see the website
 A Qcodes wrapper for the instrument is available from https://github.com/QCoDeS/Qcodes
 
 ## License
-See [License](https://github.com/Rubenknex/SPI-rack/blob/master/LICENSE).
+See [License](https://github.com/mtiggelman/SPI-rack/blob/master/LICENSE).

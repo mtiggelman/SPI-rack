@@ -28,7 +28,7 @@ class D4_module(object):
     def __init__(self, spi_rack, module):
         """Inits D4 module class
 
-        The D5a_module class needs an SPI_rack object at initiation. All
+        The D4_module class needs an SPI_rack object at initiation. All
         communication will run via that class. At initialization the ADC filters
         will be set to 'sinc3' at 16.67 SPS.
 
@@ -197,6 +197,13 @@ class D4_module(object):
 
         self._write_data_16(adc, self.reg.adcMODE_REG, (0<<self.reg.MODE) | (1<<self.reg.SING_CYC))
 
+        # Correction found by measuring with HP3458A 8.5 digit DMM
+        # This correction worked quite well with 4 chips tested.
+        gain_val = 10900
+        rdata = self._read_data(adc, self.reg.GAIN0_REG, 3)[1:]
+        value = rdata[0]<<16 | rdata[1]<<8 | rdata[0]
+        self._write_data_24(adc, self.reg.GAIN0_REG, value-gain_val)
+
         # set to back to previous setting
         self.set_filter(adc, filter_type, filter_setting)
 
@@ -242,10 +249,10 @@ class D4_module(object):
                                 (1<<self.reg.AINBUF0M))
 
             # Set the gain such that +-4V is full scale. Can be overwritten by calibration
-            self._write_data_24(adc, self.reg.GAIN0_REG, 6996273)
-            self._write_data_24(adc, self.reg.GAIN1_REG, 6996273)
-            self._write_data_24(adc, self.reg.GAIN2_REG, 6996273)
-            self._write_data_24(adc, self.reg.GAIN3_REG, 6996273)
+            self._write_data_24(adc, self.reg.GAIN0_REG, 6988566)
+            self._write_data_24(adc, self.reg.GAIN1_REG, 6988566)
+            self._write_data_24(adc, self.reg.GAIN2_REG, 6988566)
+            self._write_data_24(adc, self.reg.GAIN3_REG, 6988566)
 
     def _read_data(self, adc, reg, no_bytes):
         """

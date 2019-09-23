@@ -453,7 +453,7 @@ class S5k_module(object):
             data = 1<<16 | 0<<17 | 0<<8
         else:
             data = 1<<16 | 1<<17 | int((max_divisor/2))<<8
-        self.write_LMK_data(4, data)
+        self.write_LMK_data(3, data)
 
         # Synchronise all the clocks
         self.sync_clock()
