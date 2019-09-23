@@ -15,7 +15,7 @@ from time import sleep
 
 import numpy as np
 
-from .chip_mode import SAMD51_MODE, SAMD51_SPEED
+from .chip_mode import SAMD51_MODE, SAMD51_SPEED, BICPINS_MODE, BICPINS_SPEED
 
 logger = logging.getLogger(__name__)
 
@@ -535,8 +535,21 @@ class D5b_module(object):
         rdata = self.spi_rack.read_data(self.module, 0, SAMD51_MODE, SAMD51_SPEED, wdata)
 
         return rdata[-1]
+    
+    def is_running(self):
+        """Checks if the module is running
 
-    def get_status(self):
+        This function return true if the module is running a measurement, should be used
+        to check if data can be read.
+        
+        Returns:
+            True if the module is running a measurement
+        """
+
+        data = self.spi_rack.read_data(self.module, 6, BICPINS_MODE, BICPINS_SPEED, bytearray([0]))
+        return bool(data[0]&0x02)
+
+    def _get_status(self):
         """Gets the status of the S5b
 
         Returns the status of the S5b. At bootup (before a first run) it will

@@ -16,7 +16,7 @@ from time import sleep
 
 import numpy as np
 
-from .chip_mode import SAMD51_MODE, SAMD51_SPEED
+from .chip_mode import SAMD51_MODE, SAMD51_SPEED, BICPINS_MODE, BICPINS_SPEED
 
 logger = logging.getLogger(__name__)
 
@@ -101,16 +101,30 @@ class B2b_module(object):
         
         logger.info(' %s module %d: Starting calibration...', self.type, self.module)
         print(' {} module {}: Starting calibration...'.format(self.type, self.module))
-        sleep(1.5)
+        sleep(4)
         logger.info(' %s module %d: Finished calibration...', self.type, self.module)
         print(' {} module {}: Finished calibration...'.format(self.type, self.module))
+    
+    def is_running(self):
+        """Checks if the module is running
 
-    def get_status(self):
+        This function return true if the module is running a measurement, should be used
+        to check if data can be read.
+        
+        Returns:
+            True if the module is running a measurement
+        """
+
+        data = self.spi_rack.read_data(self.module, 6, BICPINS_MODE, BICPINS_SPEED, bytearray([0]))
+        return bool(data[0]&0x02)
+
+    def _get_status(self):
         """Gets the status
 
         Returns the status of the module. At bootup (before a first run) it will
         give 'booted'. This should not appear after. The status can be used to
-        see if the module is done running.
+        check where the module is in the process. Do not us this function to check
+        if the module is done running.
 
         Returns:
             Status of the module (string)
@@ -271,6 +285,7 @@ class B2b_module(object):
             # Get location of the last data byte in SRAM
             max_data_location = self._get_ADC_data_loc(0)
             # Create array with readout locations, for max 120 bytes at a time
+            # Start location for ADC 0 is 0
             locations = np.arange(0, max_data_location, 120)
             
             # Array with amounts of bytes per readout
@@ -294,16 +309,49 @@ class B2b_module(object):
                 rdata = self.spi_rack.read_data(self.module, 0, SAMD51_MODE, SAMD51_SPEED, wdata)
 
                 j=int(loc/3)
-                for i in range(4,len(rdata),3):
+                for n in range(4,len(rdata),3):
                     # Shift data in correct order
-                    ADC0[j] = (rdata[i]<<16 | rdata[i+1]<<8 | rdata[i+2])
+                    ADC0[j] = (rdata[n]<<16 | rdata[n+1]<<8 | rdata[n+2])
                     j+=1
             
             # Calculate the ADC values
             ADC0 = (ADC0*8.192/2**23) - 8.192
         
         if self.get_ADC_enable(1):
-            pass
+            # Get location of the last data byte in SRAM
+            max_data_location = self._get_ADC_data_loc(1)
+            # Create array with readout locations, for max 120 bytes at a time
+            # Start location for ADC 1 is 65536
+            locations = np.arange(62500, max_data_location, 120)
+            
+            # Array with amounts of bytes per readout
+            amounts = np.zeros_like(locations)
+            amounts[:-1] = locations[1:] - locations[:-1]
+            amounts[-1] = max_data_location - locations[-1]
+            
+            ADC1 = np.zeros(int((max_data_location-62500)/3))
+
+            # Readback the data in steps of max 120 bytes
+            for i, loc in enumerate(locations):
+                command = self._command.READ_LOC
+                header = 128 | command.value
+                wdata = bytearray([header, 4, (loc>>16)&0xFF, (loc>>8)&0xFF, loc&0xFF, amounts[i]])
+                self.spi_rack.write_data(self.module, 0, SAMD51_MODE, SAMD51_SPEED, wdata)
+                
+                sleep(0)
+
+                command = self._command.GET_DATA
+                wdata = bytearray([command.value, amounts[i], 0, 0xFF]+[0xFF]*amounts[i])
+                rdata = self.spi_rack.read_data(self.module, 0, SAMD51_MODE, SAMD51_SPEED, wdata)
+
+                j=int((loc-62500)/3)
+                for n in range(4,len(rdata),3):
+                    # Shift data in correct order
+                    ADC1[j] = (rdata[n]<<16 | rdata[n+1]<<8 | rdata[n+2])
+                    j+=1
+
+            # Calculate the ADC values
+            ADC1 = (ADC1*8.192/2**23) - 8.192
         
         return ADC0, ADC1  
 
@@ -318,19 +366,6 @@ class B2b_module(object):
         logger.info("%s module %d: cancelled measuring", self.type, self.module)
         print("{} module {}: cancelled measuring".format(self.type, self.module))
 
-        command = self._command.CANCEL_CMD
-
-        header = 128 | command.value
-        length = 1
-        wdata = bytearray([header, length, 0])
-        self.spi_rack.write_data(self.module, 0, SAMD51_MODE, SAMD51_SPEED, wdata)
-        
-    def reset(self):
-        """Resets the module to IDLE
-
-        Resets the module to the IDLE state. This should be called after all the data
-        has been read.
-        """
         command = self._command.CANCEL_CMD
 
         header = 128 | command.value
