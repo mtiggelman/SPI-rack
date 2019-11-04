@@ -356,9 +356,9 @@ class D5b_module(object):
         Args:
             value (float): toggle time in seconds (minimum 300ns)
         """
-        if toggle_time < 300e-9:
+        if toggle_time < 5e-6:
             raise ValueError('D5b module {}: toggle time {} not allowed. '
-                             'Has to be mimimum 300ns.'.format(self.module, toggle_time))
+                             'Has to be mimimum 5us.'.format(self.module, toggle_time))
 
         value = int(toggle_time/100e-9)
         if np.around(value*100e-9, 9) != toggle_time:

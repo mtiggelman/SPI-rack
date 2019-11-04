@@ -21,14 +21,14 @@ D5a.set_voltage(0, voltage=2.1)
 More examples can be found as Jupyter notebooks in [examples](https://github.com/mtiggelman/SPI-rack/tree/master/examples) or at the [website](http://qtwork.tudelft.nl/~mtiggelman/software/examples.html).
 
 ## Installation
-**Windows users:** before connecting the SPI-rack for the first time, install the drivers located
+**Windows 7&8 users:** before connecting the SPI-rack for the first time, install the drivers located
 in `drivers.zip`. On 64-bit systems run `SPI-Rack_x64`, on 32-bit systems
-run `SPI-Rack_x86`.
+run `SPI-Rack_x86`. This is not necessary anymore for Windows 10 systems.
 
 For a basic install use: `pip install spirack`. For more details see the website [here](http://qtwork.tudelft.nl/~mtiggelman/software/setup.html).
 
 ## Qcodes
-A Qcodes wrapper for the instrument is available from https://github.com/QCoDeS/Qcodes
+Qcodes wrappers for certain modules are available from https://github.com/QCoDeS/Qcodes
 
 ## License
 See [License](https://github.com/mtiggelman/SPI-rack/blob/master/LICENSE).

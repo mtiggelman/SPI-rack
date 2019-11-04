@@ -13,3 +13,4 @@ from .U2_module import U2_module
 from .D5b_module import D5b_module
 from .B2b_module import B2b_module
 from .D4b_module import D4b_module
+from .B1b_module import B1b_module
