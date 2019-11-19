@@ -547,7 +547,7 @@ class D5b_module(object):
         """
 
         data = self.spi_rack.read_data(self.module, 6, BICPINS_MODE, BICPINS_SPEED, bytearray([0]))
-        return bool(data[0]&0x02)
+        return bool(data[0]&0x01)
 
     def _get_status(self):
         """Gets the status of the S5b
