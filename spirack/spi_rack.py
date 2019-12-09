@@ -48,8 +48,10 @@ class SPI_rack(serial.Serial):
             super(SPI_rack, self).__init__(port, baud, timeout=timeout, write_timeout = 0)
         except ValueError:
             print("Timout value out of bound.")
+            raise
         except serial.SerialException:
             print("Cannot open serial port: " + port)
+            raise
 
         self.active_module = None
         self.active_chip = None

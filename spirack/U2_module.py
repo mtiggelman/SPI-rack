@@ -23,6 +23,7 @@ class U2_module(D5a_module):
         span (list(int)): a list of values of the span for each DAC in the module
         voltages (list(int)): a list of DAC voltage settings last written to the DAC
         active_mux (int): the mux that is currently selected
+        no_shift_reg (int): the amount of shift registers on the cryomux board
     """
 
     #DAC mapping, function to DAC number:
@@ -30,11 +31,11 @@ class U2_module(D5a_module):
     DAC_switch_neg = 6
     DAC_register_pos = 3
     DAC_register_neg = 2
-    DAC_data_pos = 4
-    DAC_data_neg = 5
-    DAC_comp_volt = 1
+    DAC_data_pos = 5
+    DAC_data_neg = 4
+    DAC_comp_volt = 0
 
-    def __init__(self, spi_rack, module, reset_voltages=True):
+    def __init__(self, spi_rack, module, reset_voltages=True, no_of_shift_registers=2):
         """Inits U2 module class
 
         The U2_module class needs an SPI_rack object at initiation. All
@@ -47,12 +48,14 @@ class U2_module(D5a_module):
             reset_voltages (bool): if True, then reset all voltages to zero and
                                    change the span to `range_4V_bi`. If a voltage
                                    jump would occur, then ramp to zero in steps of 10 mV
+            no_of_shift_registers (int): the amount of shift registers on the cryomux pcb
         """
         # init from D5a with 8 DACs
         D5a_module.__init__(self, spi_rack=spi_rack, module=module,
                             reset_voltages=reset_voltages, num_dacs=8)
 
         self.active_mux = np.NaN
+        self.no_shift_reg = no_of_shift_registers
 
     def set_switch_supply(self, voltages):
         """Sets the supply voltages for the switches
@@ -102,8 +105,8 @@ class U2_module(D5a_module):
             voltages (float): list of voltages corresponding to the low and high
                               data voltages: [low_voltage, high_voltage]
         """
-        self.set_voltage(U2_module.DAC_data_pos, voltages[0])
-        self.set_voltage(U2_module.DAC_data_neg, voltages[1])
+        self.set_voltage(U2_module.DAC_data_neg, voltages[0])
+        self.set_voltage(U2_module.DAC_data_pos, voltages[1])
 
         self.set_comparator_level(np.mean(voltages))
 
@@ -143,14 +146,55 @@ class U2_module(D5a_module):
         mux.
 
         Args:
-            mux (int): select mux 1 to 16
+            mux (int): select mux 1 to the maximum number of switches based on the amount of shift registers
         """
-        if mux not in range(1, 17):
-            raise ValueError('Mux {} not allowed. Possible values are 1 to 16'.format(mux))
+        if mux not in range(1, (self.no_shift_reg*8)+1):
+            raise ValueError('Mux {} not allowed. Possible values are 1 to {}}'.format(mux, self.no_shift_reg*8))
 
         self.active_mux = mux
+        self.active_mux_array = []
+
         # mux ranges from 1 to 16
         data = 1 << (mux-1)
-        s_data = bytearray([(data>>8)&0xFF, data&0xFF])
+
+        s_data = bytearray([])
+        for i in range(self.no_shift_reg-1, -1, -1):
+            s_data.append((data>>(i*8))&0xFF)
+
         # set cryomux shift registers to spi 7
         self.spi_rack.write_data(self.module, 7, CRYOMUX_MODE, CRYOMUX_SPEED, s_data)
+    
+    def select_multiple_mux(self, mux):
+        """Activates the selected mux
+
+        Writes the correct SPI code to the shift registers to select the desired
+        muxes.
+
+        Args:
+            mux (list of int): select mux 1 to 8*num_shift_registers
+        """
+        for m in mux:
+            if m not in range(1,8*self.no_shift_reg+1):
+                raise ValueError('Mux {} not allowed. Possible values are 1 to {}'.format(mux, num_shift_registers*8))
+    
+        self.active_mux_array = mux
+        self.active_mux = np.NaN
+
+        s_data = bytearray()
+        
+        data = 0
+        for m in mux:
+            data += (1 << (m-1))
+        
+        for mux_component in range(self.no_shift_reg):
+            s_data.insert(0, (data >> (mux_component*8))&0xFF)
+            
+        #print('data: {}\ndata bin: {}\ns_data: {}'.format(data,bin(data),s_data))
+            
+        self.spi_rack.write_data(self.module, 7, CRYOMUX_MODE, CRYOMUX_SPEED, s_data)
+        
+    def get_active_mux(self):
+        if np.isnan(self.active_mux):
+            return self.active_mux_array
+        else:
+            return self.active_mux
