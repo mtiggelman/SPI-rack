@@ -1,7 +1,12 @@
 from sys import version_info
+
 import threading
 import serial
+import logging
+
 from .chip_mode import MCP320x_MODE, MCP320x_SPEED, ADT7301_SPEED, ADT7301_MODE
+
+logger = logging.getLogger(__name__)
 
 class NoLock(object):
     """ Dummy lock object """
@@ -139,7 +144,8 @@ class SPI_rack(serial.Serial):
             r_data = self.read(read_length)
 
         if len(r_data) < read_length:
-            print("Received less bytes than expected")
+            print("Received fewer bytes than expected")
+            logger.warning("SPI Rack: received fewer bytes than expected. Received: %d bytes. Expected %d bytes.", len(r_data), read_length)
 
         if version_info[0] < 3:
             return [ord(c) for c in r_data]

@@ -14,10 +14,14 @@ Attributes:
     range_2V_bi (int): Constant to set span to -2V to 2V
 """
 
+import logging
+
 import time
 import numpy as np
 
 from .chip_mode import LTC2758_MODE, LTC2758_SPEED, LTC2758_RD_SPEED
+
+logger = logging.getLogger(__name__)
 
 class D5a_module(object):
     """D5a module interface class
@@ -74,6 +78,8 @@ class D5a_module(object):
                 if np.abs(self.voltages[i])>1e-3:
                     # we need to ramp to zero first
                     print('D5a_module: ramping dac %d from %.3f V to zero' % (i, self.voltages[i]))
+                    logger.info('D5a module %d: ramping DAC %d from %.3f V to zero' ,self.module, i, self.voltages[i])
+
                     ramp_step = 10e-3
                     ramp_delay = 10e-3
                     steps = np.arange(0, self.voltages[i], np.sign(self.voltages[i])*ramp_step)[::-1]
@@ -99,6 +105,13 @@ class D5a_module(object):
             span (constant): values for the span as mentioned in the datasheet, use
                   constants as defined above
         """
+        range_values = {'4V_uni':0, '8V_uni':1, '4V_bi':2, '8V_bi':3, '2V_bi':4}
+        if span not in range_values:
+            raise ValueError('D5a module {} [change_span_update]: value {} not allowed for span. Possible values '
+                             'are: {}'.format(self.module, span, [*range_values.keys()]))
+        if DAC not in range(self._num_dacs):
+            raise ValueError('D5a module {} [change_span_update]: DAC {} does not exist.'.format(self.module, DAC))
+
         self.span[DAC] = span
 
         # Determine which DAC in IC by checking even/uneven
@@ -131,6 +144,13 @@ class D5a_module(object):
             span (constant): values for the span as mentioned in the datasheet, use
                   constants as defined above
         """
+        range_values = {'4V_uni':0, '8V_uni':1, '4V_bi':2, '8V_bi':3, '2V_bi':4}
+        if span not in range_values:
+            raise ValueError('D5a module {} [change_span]: value {} not allowed for span. Possible values '
+                             'are: {}'.format(self.module, span, [*range_values.keys()]))
+        if DAC not in range(self._num_dacs):
+            raise ValueError('D5a module {} [change_span]: DAC {} does not exist.'.format(self.module, DAC))
+
         self.span[DAC] = span
 
         # Determine which DAC in IC by checking even/uneven
@@ -161,6 +181,9 @@ class D5a_module(object):
             DAC (int: 0-15): DAC inside the module of which to change the value
             value (18-bit unsigned int): new DAC value
         """
+        if DAC not in range(self._num_dacs):
+            raise ValueError('D5a module {} [change_value_update]: DAC {} does not exist.'.format(self.module, DAC))
+
         # Determine which DAC in IC by checking even/uneven
         address = (DAC%2)<<1
 
@@ -187,6 +210,9 @@ class D5a_module(object):
             DAC (int: 0-15): DAC inside the module of which to change the value
             value (18-bit unsigned int): new DAC value
         """
+        if DAC not in range(self._num_dacs):
+            raise ValueError('D5a module {} [change_value]: DAC {} does not exist.'.format(self.module, DAC))
+
         # Determine which DAC in IC by checking even/uneven
         address = (DAC%2)<<1
 
@@ -212,6 +238,9 @@ class D5a_module(object):
         Args:
             DAC (int: 0-15): DAC inside the module of which to update
         """
+        if DAC not in range(self._num_dacs):
+            raise ValueError('D5a module {} [update]: DAC {} does not exist.'.format(self.module, DAC))
+
         # Determine which DAC in IC by checking even/uneven
         address = (DAC%2)<<1
 
@@ -241,6 +270,9 @@ class D5a_module(object):
             DAC (int: 0-15): DAC inside the module of which to update the voltage
             voltage (float): new DAC voltage
         """
+        if DAC not in range(self._num_dacs):
+            raise ValueError('D5a module {} [set_voltage]: DAC {} does not exist.'.format(self.module, DAC))
+
         step = self.get_stepsize(DAC)
 
         if self.span[DAC] == D5a_module.range_4V_uni:
@@ -274,11 +306,15 @@ class D5a_module(object):
             self.voltages[DAC] = maxV
             if voltage > maxV:
                 print("Voltage too high for set span, DAC set to max value")
+                logger.warning('D5a module %d: voltage too high for set span, '
+                               'DAC set to max value: %f V', self.module, maxV)
         elif voltage <= minV:
             self.voltages[DAC] = minV
             bit_value = 0
             if voltage < minV:
                 print("Voltage too low for set span, DAC set to min value")
+                logger.warning('D5a module %d: voltage too low for set span, '
+                               'DAC set to min value: %f V', self.module, minV)
 
         self.change_value_update(DAC, bit_value)
 
@@ -295,6 +331,9 @@ class D5a_module(object):
         Returns:
             Smallest voltage step possible with DAC (float)
         """
+        if DAC not in range(self._num_dacs):
+            raise ValueError('D5a module {} [get_stepsize]: DAC {} does not exist.'.format(self.module, DAC))
+
         if self.span[DAC] == D5a_module.range_4V_uni:
             return 4.0/(2**18)
         if self.span[DAC] == (D5a_module.range_4V_bi or D5a_module.range_8V_uni):
@@ -315,6 +354,9 @@ class D5a_module(object):
         Returns:
             List with voltage and span: [voltages, span] (int)
         """
+        if DAC not in range(self._num_dacs):
+            raise ValueError('D5a module {} [get_settings]: DAC {} does not exist.'.format(self.module, DAC))
+
         # Determine which DAC in IC by checking even/uneven
         address = (DAC%2)<<1
         # Determine in which IC the DAC is, for SPI chip select
@@ -347,4 +389,7 @@ class D5a_module(object):
         else:
             raise ValueError("Span {} should not be used. Accepted values are: {}".format(span, [0, 1, 2, 3, 4]))
 
+        self.voltages[DAC] = voltage
+        self.span[DAC] = span
+        
         return [voltage, span]
