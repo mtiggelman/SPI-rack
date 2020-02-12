@@ -105,10 +105,6 @@ class D5a_module(object):
             span (constant): values for the span as mentioned in the datasheet, use
                   constants as defined above
         """
-        range_values = {'4V_uni':0, '8V_uni':1, '4V_bi':2, '8V_bi':3, '2V_bi':4}
-        if span not in range_values:
-            raise ValueError('D5a module {} [change_span_update]: value {} not allowed for span. Possible values '
-                             'are: {}'.format(self.module, span, [*range_values.keys()]))
         if DAC not in range(self._num_dacs):
             raise ValueError('D5a module {} [change_span_update]: DAC {} does not exist.'.format(self.module, DAC))
 
@@ -144,10 +140,6 @@ class D5a_module(object):
             span (constant): values for the span as mentioned in the datasheet, use
                   constants as defined above
         """
-        range_values = {'4V_uni':0, '8V_uni':1, '4V_bi':2, '8V_bi':3, '2V_bi':4}
-        if span not in range_values:
-            raise ValueError('D5a module {} [change_span]: value {} not allowed for span. Possible values '
-                             'are: {}'.format(self.module, span, [*range_values.keys()]))
         if DAC not in range(self._num_dacs):
             raise ValueError('D5a module {} [change_span]: DAC {} does not exist.'.format(self.module, DAC))
 
