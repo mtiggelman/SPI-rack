@@ -72,14 +72,25 @@ class S5i_module(object):
     def set_output_power(self, level):
         """Sets the source output power
 
-        Sets the output power of the unit. Can be varied over ~30 dB.
-        Args:
-            level: value between -20 and 14 (dBm))
-        """
-        if level < -20 or level > 14:
-            raise ValueError('Level {} not allowed. Has to be between -20 and 14 (dBm)'.format(level))
+        Sets the output power of the unit. Can be varied over ~30 dB. Stepsize is 1 dBm
+        with an accuracy of +- 0.5 dBm
 
-        value = int(1927.5*level + 38550)
+        Args:
+            level (int): value between -20 and 15 (dBm))
+        """
+        if level < -20 or level > 15:
+            raise ValueError('Level {} not allowed. Has to be between -20 and 15 (dBm)'.format(level))
+        
+        # The curve below contains the DAC values corresponding to the output power from
+        # -20dBm to 15 dBm in steps of 1 dBm. This is based on the average of 3 S5i output 
+        # power curves.
+        output_curve = np.array([ 8849, 14876, 17441, 18852, 19878, 20776, 21417, 22186, 22828,
+                                    23597, 24238, 25136, 25906, 26932, 28086, 29368, 30651, 32062,
+                                    33601, 35011, 36422, 37448, 38474, 39500, 40398, 41424, 42322,
+                                    43348, 44245, 45399, 46425, 47580, 48734, 50016, 51555, 63354])
+
+        value = output_curve[int(level)+20]
+
         s_data = bytearray([64|(value>>10), (value>>2)&0xFF, (value&3)<<6])
         self.spi_rack.write_data(self.module, 1, MAX521x_MODE, MAX521x_SPEED, s_data)
 

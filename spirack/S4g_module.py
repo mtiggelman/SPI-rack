@@ -15,9 +15,13 @@ Todo:
     *Add checks on writing span and values
 """
 
+import logging
+
 import numpy as np
 
 from .chip_mode import LTC2758_MODE, LTC2758_SPEED, LTC2758_RD_SPEED
+
+logger = logging.getLogger(__name__)
 
 class S4g_module(object):
     """S4g module interface class
@@ -68,7 +72,7 @@ class S4g_module(object):
         self.max_current = max_current
 
         for i in range(4):
-            self.currents[i], self.span[i] = self.get_settings(i)
+            self.get_settings(i)
 
         if reset_currents:
             for i in range(4):
@@ -234,10 +238,14 @@ class S4g_module(object):
             bit_value = (2**18)-1
             self.currents[DAC] = maxI
             print("Current too high for set span, DAC set to max value")
+            logger.warning('S4g module %d: current %f mA too high for set span,'
+                           'current set to max value: %f mA', self.module, current, maxI)
         elif current <= minI:
             self.currents[DAC] = minI
             bit_value = 0
             print("Current too low for set span, DAC set to min value")
+            logger.warning('S4g module %d: current %f mA too low for set span,'
+                           'current set to min value: %f mA', self.module, current, minI)
 
         self.change_value_update(DAC, bit_value)
 
@@ -302,5 +310,8 @@ class S4g_module(object):
             current = (code*self.max_current/(2**18)) - (self.max_current/2.0)
         else:
             raise ValueError("Span {} should not be used. Accepted values are: {}".format(span, [0, 2, 4]))
+
+        self.currents[DAC] = current
+        self.span[DAC] = span
 
         return [current, span]

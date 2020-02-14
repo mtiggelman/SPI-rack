@@ -71,7 +71,7 @@ class D5a_module(object):
         self.voltages = [np.NaN]*self._num_dacs
 
         for i in range(self._num_dacs):
-            self.voltages[i], self.span[i] = self.get_settings(i)
+            self.get_settings(i)
 
         if reset_voltages:
             for i in range(self._num_dacs):
@@ -298,15 +298,15 @@ class D5a_module(object):
             self.voltages[DAC] = maxV
             if voltage > maxV:
                 print("Voltage too high for set span, DAC set to max value")
-                logger.warning('D5a module %d: voltage too high for set span, '
-                               'DAC set to max value: %f V', self.module, maxV)
+                logger.warning('D5a module %d: voltage %f V too high for set span, '
+                               'DAC set to max value: %f V', self.module, voltage, maxV)
         elif voltage <= minV:
             self.voltages[DAC] = minV
             bit_value = 0
             if voltage < minV:
                 print("Voltage too low for set span, DAC set to min value")
-                logger.warning('D5a module %d: voltage too low for set span, '
-                               'DAC set to min value: %f V', self.module, minV)
+                logger.warning('D5a module %d: voltage %f V too low for set span, '
+                               'DAC set to min value: %f V', self.module, voltage, minV)
 
         self.change_value_update(DAC, bit_value)
 
