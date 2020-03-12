@@ -5,7 +5,7 @@ Necessary for setting the chip select in the SPI Rack
 
 The speeds are set by a divisor: 84MHz/value (range 14..255), these are the
 numbers in the list below. Zero is a special value which sets the SPI speed to
-1kHz (software SPI)
+5kHz (software SPI)
 """
 # ADC
 AD7175_MODE = 3
@@ -36,4 +36,4 @@ AD7175_SPEED = 21       #  4MHz (slow for test)
 MCP320x_SPEED = 84      #  1MHz
 BICPINS_SPEED = 84      #  1MHz
 ADT7301_SPEED = 84      #  1MHz
-CRYOMUX_SPEED = 0       #  1kHz
+CRYOMUX_SPEED = 0       #  5kHz
