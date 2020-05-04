@@ -157,7 +157,7 @@ class SPI_rack(serial.Serial):
     def write_bulk_data(self, module, chip, SPI_mode, SPI_speed, data):
         """Writes bulk data to the selected module/chip combination
 
-        This function allows for the writing of large amount of data. The control
+        This functiona allows for the writing of large amount of data. The control
         of the chip select line is done by the PC, which makes it uncertain. The data
         is split in chunks of 60 bytes, as this is the maximum amount that can be send 
         in one transfer to the controller. This also adds a slight uncertainty in the timing
@@ -194,7 +194,7 @@ class SPI_rack(serial.Serial):
     def read_bulk_data(self, module, chip, SPI_mode, SPI_speed, data):
         """Reads bulk data from the selected module/chip combination
 
-        This function allows for the reading of large amount of data. The control
+        This functiona allows for the reading of large amount of data. The control
         of the chip select line is done by the PC, which makes it uncertain. The data
         is split in chunks of 60 bytes, as this is the maximum amount that can be send 
         in one transfer to the controller. This also adds a slight uncertainty in the timing
