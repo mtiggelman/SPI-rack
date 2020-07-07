@@ -269,7 +269,7 @@ class S4g_module(object):
         if self.span[DAC] == S4g_module.range_min_bi:
             return self.max_current/(2**18)
 
-    def get_settings(self, DAC):
+    def get_settings(self, vDAC):
         """Reads current DAC settings
 
         Reads back the DAC registers of the given DAC for both the code
@@ -281,7 +281,7 @@ class S4g_module(object):
             List with currents and span: [current, span] (int)
         """
         # Map output/virtual DAC to physical DAC IC
-        DAC = S4g_module.DAC_mapping[DAC]
+        DAC = S4g_module.DAC_mapping[vDAC]
 
         # Determine which DAC in IC by checking even/uneven
         address = (DAC%2)<<1
@@ -311,7 +311,7 @@ class S4g_module(object):
         else:
             raise ValueError("Span {} should not be used. Accepted values are: {}".format(span, [0, 2, 4]))
 
-        self.currents[DAC] = current
-        self.span[DAC] = span
+        self.currents[vDAC] = current
+        self.span[vDAC] = span
 
         return [current, span]
