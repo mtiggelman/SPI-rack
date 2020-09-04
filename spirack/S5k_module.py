@@ -126,7 +126,7 @@ class S5k_module(object):
             sawtooth_type (str): type of sawtooth to output
             stepsize (int: 1-63): clock cycles per counter step
         """
-        if self.DAC_waveform_mode[DAC-1] is not 'sawtooth':
+        if self.DAC_waveform_mode[DAC-1] != 'sawtooth':
             print('DAC {} is not set to sawtooth mode!'.format(DAC))
 
         possible_values = {'ramp_up': 0, 'ramp_down': 1, 'triangle': 2, 'no_wave': 3}
@@ -172,7 +172,7 @@ class S5k_module(object):
             DAC (int: 1-16): DAC of which DC value to change
             value (float): Voltage within range -2.875 -> 2.857
         """
-        if self.DAC_waveform_mode[DAC-1] is not 'DC':
+        if self.DAC_waveform_mode[DAC-1] != 'DC':
             #raise ValueError('DAC {} needs to be set to DC to set DC value'.format(DAC))
             print("Warning! DAC will only output this DC level when the module is NOT running/triggered!")
 
