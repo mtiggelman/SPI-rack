@@ -313,7 +313,7 @@ class D5a_module(object):
     def get_stepsize(self, DAC):
         """Returns the smallest voltage step for a given DAC
 
-        Calculates and returns the smalles voltage step of the DAC for the
+        Calculates and returns the smallest voltage step of the DAC for the
         set span. Voltage steps smaller than this will not change the DAC value.
         Recommended to only step the DAC in multiples of this value, as otherwise
         steps might not behave as expected.
@@ -327,13 +327,15 @@ class D5a_module(object):
             raise ValueError('D5a module {} [get_stepsize]: DAC {} does not exist.'.format(self.module, DAC))
 
         if self.span[DAC] == D5a_module.range_4V_uni:
-            return 4.0/(2**18)
-        if self.span[DAC] == (D5a_module.range_4V_bi or D5a_module.range_8V_uni):
-            return 8.0/(2**18)
-        if self.span[DAC] == D5a_module.range_8V_bi:
-            return 16.0/(2**18)
-        if self.span[DAC] == D5a_module.range_2V_bi:
-            return 4.0/(2**18)
+            return 4.0 / (2 ** 18)
+        elif self.span[DAC] == D5a_module.range_4V_bi or self.span[DAC] == D5a_module.range_8V_uni:
+            return 8.0 / (2 ** 18)
+        elif self.span[DAC] == D5a_module.range_8V_bi:
+            return 16.0 / (2 ** 18)
+        elif self.span[DAC] == D5a_module.range_2V_bi:
+            return 4.0 / (2 ** 18)
+        else:
+            raise ValueError(f"Span for DAC {DAC} not set to valid value. Span currently set to {self.span[DAC]}.")
 
     def get_settings(self, DAC):
         """Reads current DAC settings
