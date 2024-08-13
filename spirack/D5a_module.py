@@ -67,8 +67,8 @@ class D5a_module(object):
         self.spi_rack = spi_rack
         self.module = module
         self._num_dacs = num_dacs
-        self.span = [np.NaN]*self._num_dacs
-        self.voltages = [np.NaN]*self._num_dacs
+        self.span = [np.nan]*self._num_dacs
+        self.voltages = [np.nan]*self._num_dacs
 
         for i in range(self._num_dacs):
             self.get_settings(i)
@@ -385,5 +385,5 @@ class D5a_module(object):
 
         self.voltages[DAC] = voltage
         self.span[DAC] = span
-        
+
         return [voltage, span]

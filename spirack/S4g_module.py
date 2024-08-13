@@ -67,8 +67,8 @@ class S4g_module(object):
         """
         self.spi_rack = spi_rack
         self.module = module
-        self.span = [np.NaN]*4
-        self.currents = [np.NaN]*4
+        self.span = [np.nan]*4
+        self.currents = [np.nan]*4
         self.max_current = max_current
 
         for i in range(4):
