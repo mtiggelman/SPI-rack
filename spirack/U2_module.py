@@ -54,7 +54,7 @@ class U2_module(D5a_module):
         D5a_module.__init__(self, spi_rack=spi_rack, module=module,
                             reset_voltages=reset_voltages, num_dacs=8)
 
-        self.active_mux = np.NaN
+        self.active_mux = np.nan
         self.no_shift_reg = no_of_shift_registers
 
     def set_switch_supply(self, voltages):
@@ -163,7 +163,7 @@ class U2_module(D5a_module):
 
         # set cryomux shift registers to spi 7
         self.spi_rack.write_data(self.module, 7, CRYOMUX_MODE, CRYOMUX_SPEED, s_data)
-    
+
     def select_multiple_mux(self, mux):
         """Activates the selected mux
 
@@ -176,43 +176,43 @@ class U2_module(D5a_module):
         for m in mux:
             if m not in range(1,8*self.no_shift_reg+1):
                 raise ValueError('Mux {} not allowed. Possible values are 1 to {}'.format(mux, self.no_shift_reg*8))
-    
+
         self.active_mux_array = mux
-        self.active_mux = np.NaN
+        self.active_mux = np.nan
 
         s_data = bytearray()
-        
+
         data = 0
         for m in mux:
             data += (1 << (m-1))
-        
+
         for mux_component in range(self.no_shift_reg):
             s_data.insert(0, (data >> (mux_component*8))&0xFF)
-            
+
         self.spi_rack.write_data(self.module, 7, CRYOMUX_MODE, CRYOMUX_SPEED, s_data)
-        
+
     def get_active_mux(self):
         if np.isnan(self.active_mux):
             return self.active_mux_array
         else:
             return self.active_mux
-    
+
     def write_bulk_data(self, data, SPI_mode=CRYOMUX_MODE):
         """Write bulk data to the shift registers/cryo mux
 
         Allows the writing of an arbitrary amount of data.
-        
+
         Args:
             data (int list): list of bytes to be written, values from 0-255
             SPI_mode (int: 0-3): SPI mode to use. Defaults to CRYOMUX_MODE.
         """
         self.spi_rack.write_bulk_data(self.module, 7, SPI_mode, CRYOMUX_SPEED, data)
-    
+
     def read_bulk_data(self, data, SPI_mode=CRYOMUX_MODE):
         """Read bulk data from the shift registers
 
         Allows the reading of an arbitrary amount of data.
-        
+
         Args:
             data (int list): list of bytes to be written, values from 0-255
             SPI_mode (int: 0-3): SPI mode to use. Defaults to CRYOMUX_MODE.
