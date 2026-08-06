@@ -47,7 +47,7 @@ docker run \
   -e TCP_PORT=10000 \
   -p 10000:10000 \
   --device=/dev/ttyACM0:/dev/ttyACM0 \
-  --restart unless-stopped
+  --restart unless-stopped \
   spirack-service
 ```
 

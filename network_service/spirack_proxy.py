@@ -143,9 +143,6 @@ class ConduitServer:
                 return
             try:
                 log.info("OWNER %s acquired the device", peer)
-                self.ser.reset_input_buffer()
-                self.ser.reset_output_buffer()
-
                 self._pump(conn)
             finally:
                 self.device_lock.release()
