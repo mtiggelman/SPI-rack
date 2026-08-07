@@ -17,7 +17,7 @@ class NoLock(object):
     def __exit__(self, exc_type, exc_value, traceback):
         pass
 
-class SPI_rack(serial.Serial):
+class SPI_rack():
     """SPI rack interface class
 
     The SPI rack class is used to interface with the SPI rack controller unit.
@@ -51,7 +51,10 @@ class SPI_rack(serial.Serial):
             SPI_Rack_1 = SPI_rack("COM1", 1000000, 1)
         """
         try:
-            super(SPI_rack, self).__init__(port, baud, timeout=timeout, write_timeout = 0)
+            # By keeping reference to a Serial object (instead of inheriting from it like previous versions) we may call
+            # the serial_for_url method which gives us access to a richer model for a serial port, such as one that
+            # supports network connected ports.
+            self._serial = serial.serial_for_url(port, baudrate=baud, timeout=timeout, write_timeout=0)
         except ValueError:
             print("Timout value out of bound.")
             raise
@@ -69,6 +72,15 @@ class SPI_rack(serial.Serial):
             self._tlock = threading.Lock()
         else:
             self._tlock = NoLock()
+
+    def __getattr__(self, name):
+        return getattr(self._serial, name)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
 
     def set_ref_frequency(self, frequency):
         """Set the reference frequency present on the backplane (Hz)
@@ -153,16 +165,16 @@ class SPI_rack(serial.Serial):
                 return [ord(c) for c in r_data]
 
             return r_data
-    
+
     def write_bulk_data(self, module, chip, SPI_mode, SPI_speed, data):
         """Writes bulk data to the selected module/chip combination
 
         This functiona allows for the writing of large amount of data. The control
         of the chip select line is done by the PC, which makes it uncertain. The data
-        is split in chunks of 60 bytes, as this is the maximum amount that can be send 
+        is split in chunks of 60 bytes, as this is the maximum amount that can be send
         in one transfer to the controller. This also adds a slight uncertainty in the timing
         between the packets of 60 bytes. Use with caution.
-        
+
         Args:
             module (int:0-15)       : number of the module to send data to (int)
             chip   (int:0-7)        : chip in module to send data to (int)
@@ -174,14 +186,14 @@ class SPI_rack(serial.Serial):
             if(self.active_module != module or self.active_chip != chip
                or self.active_speed != SPI_speed):
                 self._set_active(module, chip, SPI_mode, SPI_speed)
-            
+
             # Write bulk data in chunks of 60 bytes (maximum for buffer size in controller)
             data = np.asarray(data, dtype=np.uint8)
             split_data = np.split(data, np.arange(60, len(data), 60))
-            
+
             # Set chip select low
             s_data = bytearray([ord('m'), ord('s')])
-            self.write(s_data)            
+            self.write(s_data)
 
             for group in split_data:
                 s_data = bytearray([ord('m'), ord('w')]) + group.tobytes()
@@ -190,23 +202,23 @@ class SPI_rack(serial.Serial):
             # Set chip select high
             s_data = bytearray([ord('m'), ord('d')])
             self.write(s_data)
-    
+
     def read_bulk_data(self, module, chip, SPI_mode, SPI_speed, data):
         """Reads bulk data from the selected module/chip combination
 
         This functiona allows for the reading of large amount of data. The control
         of the chip select line is done by the PC, which makes it uncertain. The data
-        is split in chunks of 60 bytes, as this is the maximum amount that can be send 
+        is split in chunks of 60 bytes, as this is the maximum amount that can be send
         in one transfer to the controller. This also adds a slight uncertainty in the timing
         between the packets of 60 bytes. Use with caution.
-        
+
         Args:
             module (int:0-15)       : number of the module to send data to (int)
             chip   (int:0-7)        : chip in module to send data to (int)
             SPI_mode (int:0-3)      : SPI mode of the chip to be activated (int)
             SPI_speed (int:0, 6-84) : SPI clock speed of the chip to be activated (int)
             data (bytearray)        : array of data to be send (bytearray)
-        
+
         Returns:
             Bytes received from module/chip (int list)
         """
@@ -214,14 +226,14 @@ class SPI_rack(serial.Serial):
             if(self.active_module != module or self.active_chip != chip
                or self.active_speed != SPI_speed):
                 self._set_active(module, chip, SPI_mode, SPI_speed)
-            
+
             read_length = len(data)
             read_data = []
 
             # Write bulk data in chunks of 60 bytes (maximum for buffer size in controller)
             data = np.asarray(data, dtype=np.uint8)
             split_data = np.split(data, np.arange(60, len(data), 60))
-        
+
             # Set chip select low
             s_data = bytearray([ord('m'), ord('s')])
             self.write(s_data)
@@ -242,7 +254,7 @@ class SPI_rack(serial.Serial):
 
             if version_info[0] < 3:
                 return [ord(c) for c in read_data]
-            
+
             return read_data
 
     def trigger_now(self):
